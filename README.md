@@ -1,6 +1,8 @@
 GeoBench is a benchmark for evaluating how well large language models can identify geographic locations from images through the context of GeoGuessr. This project tests whether models can generalize beyond their primary training modalities to perform spatial reasoning tasks.
 
-**[Leaderboard](https://geobench.org)**
+# **[Leaderboard](https://geobench.org)**
+
+![](img/leaderboard.png)
 
 # Installation
 ```
@@ -20,3 +22,8 @@ python geobench.py --dataset <test name> --model <model name>
 ```
 
 Models go by their class name in `models.py`. Claude 3.5 Haiku goes by `Claude3_5Haiku`, for instance.
+
+## Compare guesses
+Running the `browser/main.py` script and opening `visualization.html` can show you all guesses for a location made by the models.
+
+![](img/visualization.png)
