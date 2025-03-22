@@ -1,0 +1,10 @@
+.env
+
+# Private
+dataset/*
+responses/*
+
+__pycache__/
+
+node_modules/
+site/dist/*

@@ -1,0 +1,10 @@
+aiohttp==3.9.5
+haversine==2.9.0
+numpy==2.2.4
+opencv_python==4.10.0.84
+pandas==2.2.3
+Pillow==11.1.0
+python-dotenv==1.0.1
+ratelimit==2.2.1
+replicate==1.0.4
+Requests==2.32.3
