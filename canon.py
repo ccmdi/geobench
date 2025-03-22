@@ -40,7 +40,7 @@ COUNTRY_GROUPS = [
     ["Central African Republic (the)", "central african republic", "car", "the central african republic"],
     ["Chad", "republic of chad", "tchad"],
     ["Chile", "republic of chile", "república de chile"],
-    ["China", "people's republic of china", "prc", "mainland china", "zhongguo", "zhōngguó"],
+    ["China", "people's republic of china", "prc", "mainland china", "zhongguo", "zhōngguó", "Hong Kong", "hong kong sar", "hong kong special administrative region", "hksar", "hk", "Macao", "macau", "macao sar", "macau special administrative region", "Taiwan (Province of China)", "taiwan", "republic of china", "chinese taipei", "formosa"],
     ["Colombia", "republic of colombia", "república de colombia"],
     ["Comoros (the)", "comoros", "union of the comoros", "the comoros"],
     ["Congo (the)", "congo", "republic of the congo", "congo-brazzaville", "the congo"],
@@ -53,7 +53,7 @@ COUNTRY_GROUPS = [
     ["Czechia", "czech republic", "česko", "česká republika", "cesko"],
     
     # D
-    ["Denmark", "kingdom of denmark", "danmark"],
+    ["Denmark", "kingdom of denmark", "danmark", "Faroe Islands (the)", "faroe islands", "the faroe islands", "føroyar", "foroyar", "Greenland", "kalaallit nunaat"],
     ["Djibouti", "republic of djibouti"],
     ["Dominica", "commonwealth of dominica"],
     ["Dominican Republic (the)", "dominican republic", "the dominican republic", "república dominicana"],
@@ -70,8 +70,8 @@ COUNTRY_GROUPS = [
     
     # F
     ["Fiji", "republic of fiji"],
-    ["Finland", "republic of finland", "suomi"],
-    ["France", "french republic", "république française", "republique francaise"],
+    ["Finland", "republic of finland", "suomi", "Åland Islands", "aland islands", "åland", "aland"],
+    ["France", "french republic", "république française", "republique francaise", "French Polynesia", "polynésie française", "polynesie francaise", "New Caledonia", "nouvelle-calédonie", "nouvelle-caledonie", "French Guiana", "guyane", "guyane française", "guyane francaise", "Réunion", "reunion", "île de la réunion", "ile de la reunion", "Martinique", "martinica", "Guadeloupe", "guadalupe", "Saint Martin (French part)", "st martin", "saint-martin", "Saint Barthélemy", "st barthelemy", "saint-barthélemy", "saint-barthelemy", "Saint Pierre and Miquelon", "st pierre and miquelon", "saint-pierre et miquelon", "Wallis and Futuna", "wallis-et-futuna", "wallis et futuna", "territory of the wallis and futuna islands", "French Southern and Antarctic Lands", "french southern territories", "terres australes et antarctiques françaises"],
     
     # G
     ["Gabon", "gabonese republic", "république gabonaise"],
@@ -151,8 +151,8 @@ COUNTRY_GROUPS = [
     ["Namibia", "republic of namibia", "southwest africa"],
     ["Nauru", "republic of nauru"],
     ["Nepal", "federal democratic republic of nepal"],
-    ["Netherlands (the)", "netherlands", "the netherlands", "holland", "nederland", "kingdom of the netherlands"],
-    ["New Zealand", "nz", "aotearoa"],
+    ["Netherlands (the)", "netherlands", "the netherlands", "holland", "nederland", "kingdom of the netherlands", "Aruba", "aw", "Curaçao", "curacao", "Sint Maarten (Dutch part)", "sint maarten", "saint martin (dutch part)", "Bonaire, Sint Eustatius and Saba", "bes islands", "caribbean netherlands"],
+    ["New Zealand", "nz", "aotearoa", "Cook Islands", "kuki airani", "Niue", "Tokelau"],
     ["Nicaragua", "republic of nicaragua", "república de nicaragua"],
     ["Niger (the)", "niger", "republic of the niger", "the niger"],
     ["Nigeria", "federal republic of nigeria"],
@@ -226,8 +226,8 @@ COUNTRY_GROUPS = [
     ["Uganda", "republic of uganda"],
     ["Ukraine", "ukraїna", "ukraina"],
     ["United Arab Emirates (the)", "united arab emirates", "uae", "emirates", "the united arab emirates"],
-    ["United Kingdom of Great Britain and Northern Ireland (the)", "united kingdom", "uk", "great britain", "britain", "the united kingdom", "england", "northern ireland", "scotland", "wales", "gb"],
-    ["United States of America (the)", "united states", "usa", "united states of america", "us", "the united states", "america", "u.s.a.", "u.s."],
+    ["United Kingdom of Great Britain and Northern Ireland (the)", "united kingdom", "uk", "great britain", "britain", "the united kingdom", "england", "northern ireland", "scotland", "wales", "gb", "Bermuda", "somers isles", "Cayman Islands", "cayman", "British Virgin Islands", "bvi", "virgin islands", "Turks and Caicos Islands", "tci", "Anguilla", "Gibraltar", "Montserrat", "Pitcairn Islands", "pitcairn", "pitcairn, henderson, ducie and oeno islands", "Saint Helena, Ascension and Tristan da Cunha", "saint helena", "st helena", "ascension", "tristan da cunha", "British Indian Ocean Territory", "biot", "chagos archipelago", "Falkland Islands (the) [Malvinas]", "falkland islands", "malvinas", "the falkland islands"],
+    ["United States of America (the)", "united states", "usa", "united states of america", "us", "the united states", "america", "u.s.a.", "u.s.", "Puerto Rico", "pr", "commonwealth of puerto rico", "Guam", "gu", "guåhan", "guahan", "American Samoa", "as", "amerika sāmoa", "amerika samoa", "U.S. Virgin Islands", "us virgin islands", "virgin islands of the united states", "usvi", "Northern Mariana Islands", "cnmi", "commonwealth of the northern mariana islands"],
     ["Uruguay", "oriental republic of uruguay", "república oriental del uruguay"],
     ["Uzbekistan", "republic of uzbekistan", "o'zbekiston", "ozbekiston"],
     
@@ -241,49 +241,7 @@ COUNTRY_GROUPS = [
     
     # Z
     ["Zambia", "republic of zambia", "northern rhodesia"],
-    ["Zimbabwe", "republic of zimbabwe", "southern rhodesia", "rhodesia"],
-    
-    # Special administrative regions, territories, dependencies
-    ["Hong Kong", "hong kong sar", "hong kong special administrative region", "hksar", "hk"],
-    ["Macao", "macau", "macao sar", "macau special administrative region"],
-    ["Taiwan (Province of China)", "taiwan", "republic of china", "chinese taipei", "formosa"],
-    ["Puerto Rico", "pr", "commonwealth of puerto rico"],
-    ["Guam", "gu", "guåhan", "guahan"],
-    ["American Samoa", "as", "amerika sāmoa", "amerika samoa"],
-    ["U.S. Virgin Islands", "us virgin islands", "virgin islands of the united states", "usvi"],
-    ["Northern Mariana Islands", "cnmi", "commonwealth of the northern mariana islands"],
-    ["Bermuda", "somers isles"],
-    ["Cayman Islands", "cayman"],
-    ["British Virgin Islands", "bvi", "virgin islands"],
-    ["Turks and Caicos Islands", "tci"],
-    ["Anguilla"],
-    ["Gibraltar"],
-    ["Montserrat"],
-    ["Pitcairn Islands", "pitcairn", "pitcairn, henderson, ducie and oeno islands"],
-    ["Saint Helena, Ascension and Tristan da Cunha", "saint helena", "st helena", "ascension", "tristan da cunha"],
-    ["British Indian Ocean Territory", "biot", "chagos archipelago"],
-    ["Falkland Islands (the) [Malvinas]", "falkland islands", "malvinas", "the falkland islands"],
-    ["French Polynesia", "polynésie française", "polynesie francaise"],
-    ["New Caledonia", "nouvelle-calédonie", "nouvelle-caledonie"],
-    ["French Guiana", "guyane", "guyane française", "guyane francaise"],
-    ["Réunion", "reunion", "île de la réunion", "ile de la reunion"],
-    ["Martinique", "martinica"],
-    ["Guadeloupe", "guadalupe"],
-    ["Saint Martin (French part)", "st martin", "saint-martin"],
-    ["Saint Barthélemy", "st barthelemy", "saint-barthélemy", "saint-barthelemy"],
-    ["Saint Pierre and Miquelon", "st pierre and miquelon", "saint-pierre et miquelon"],
-    ["Wallis and Futuna", "wallis-et-futuna", "wallis et futuna", "territory of the wallis and futuna islands"],
-    ["French Southern and Antarctic Lands", "french southern territories", "terres australes et antarctiques françaises"],
-    ["Aruba", "aw"],
-    ["Curaçao", "curacao"],
-    ["Sint Maarten (Dutch part)", "sint maarten", "saint martin (dutch part)"],
-    ["Bonaire, Sint Eustatius and Saba", "bes islands", "caribbean netherlands"],
-    ["Faroe Islands (the)", "faroe islands", "the faroe islands", "føroyar", "foroyar"],
-    ["Greenland", "kalaallit nunaat"],
-    ["Cook Islands", "kuki airani"],
-    ["Niue"],
-    ["Tokelau"],
-    ["Åland Islands", "aland islands", "åland", "aland"]
+    ["Zimbabwe", "republic of zimbabwe", "southern rhodesia", "rhodesia"]
 ]
 
 COUNTRY_ALIASES = {}
