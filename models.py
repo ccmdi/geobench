@@ -922,6 +922,62 @@ class Gemma27b(MultimodalModel):
             print(f"OpenRouter API error: {str(e)}")
             raise Exception(f"OpenRouter API error: {str(e)}")
 
+class Gemini2_5ProExp(MultimodalModel):
+    api_key_name = "OPENROUTER_API_KEY"
+    
+    def __init__(self, api_key: str):
+        super().__init__()
+        self.api_key = api_key
+    
+    @sleep_and_retry
+    @limits(calls=1, period=60)
+    def query(self, image_path: str, prompt: str) -> str:
+        media_type = get_image_media_type(image_path)
+        
+        with open(image_path, "rb") as img_file:
+            img_data = base64.b64encode(img_file.read()).decode("utf-8")
+
+        image_url = f"data:{media_type};base64,{img_data}"
+        
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+            "HTTP-Referer": "https://geobench.org"
+        }
+        
+        payload = {
+            "model": "google/gemini-2.5-pro-exp-03-25:free",
+            "messages": [
+                {
+                    "role": "user", 
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": image_url}}
+                    ]
+                }
+            ],
+            "max_tokens": 16046,
+            "temperature": 0.4
+        }
+        
+        try:
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                json=payload
+            )
+            
+            if response.status_code != 200:
+                print(f"API error: {response.text}")
+                raise Exception(f"OpenRouter API error: {response.status_code}")
+                
+            response_json = response.json()
+            return response_json["choices"][0]["message"]["content"]
+            
+        except Exception as e:
+            print(f"OpenRouter API error: {str(e)}")
+            raise Exception(f"OpenRouter API error: {str(e)}")
+
 class Phi4Instruct(MultimodalModel):
     api_key_name = "OPENROUTER_API_KEY"
     
