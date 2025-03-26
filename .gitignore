@@ -1,6 +1,7 @@
+__pycache__/
 .env
 
 dataset/*
 responses/*
 
-__pycache__/
+browser/visualization.html
