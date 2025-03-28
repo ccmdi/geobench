@@ -131,11 +131,16 @@ class GeoGuessrBenchmark:
             ))
         return locations
     
-    def run_benchmark(self, num_samples: Optional[int] = None) -> Dict:
+    def run_benchmark(self, args) -> Dict:
         locations_to_test = self.locations
-        if num_samples and num_samples < len(self.locations):
+
+        if args.sample_id is not None:
+            locations_to_test = [loc for loc in self.locations if loc.id == str(args.sample_id)]
+            if not locations_to_test:
+                raise ValueError(f"ID '{args.sample_id}' not found in dataset")
+        elif args.samples and args.samples < len(self.locations):
             import random
-            locations_to_test = random.sample(self.locations, num_samples)
+            locations_to_test = random.sample(self.locations, args.samples)
                 
         self.results = []
         
@@ -356,6 +361,7 @@ if __name__ == "__main__":
                         help="Dataset subfolder to use (default: 'acw')")
     parser.add_argument("--samples", "-n", type=int, default=None,
                         help="Number of samples to test (default: all)")
+    parser.add_argument("--sample-id", "-i", type=int, default=None, help="Run a specific sample by ID")
     parser.add_argument("--model", "-m", type=str, default="claude",
                         help="Model provider to use (default: 'claude')")
     parser.add_argument("--max-retries", type=int, default=3,
@@ -373,7 +379,7 @@ if __name__ == "__main__":
     runtime = datetime.datetime.now().strftime('%Y-%m-%dT%H_%M_%S')
     run_folder = f"responses/{benchmark.model.name}_{args.dataset}_{runtime}"
     
-    results = benchmark.run_benchmark(num_samples=args.samples)
+    results = benchmark.run_benchmark(args)
     
     benchmark.save_results(run_folder + "/results/")
     
