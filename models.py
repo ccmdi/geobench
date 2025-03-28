@@ -540,7 +540,9 @@ class GPT4oMini(MultimodalModel):
     def __init__(self, api_key: str):
         super().__init__()
         self.api_key = api_key
-        
+    
+    @sleep_and_retry
+    @limits(calls=5, period=60)
     def query(self, image_path: str, prompt: str) -> str:
         media_type = get_image_media_type(image_path)
         
