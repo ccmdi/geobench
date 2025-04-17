@@ -65,7 +65,7 @@ def create_geoguessr_visualization(responses_dir="../responses"):
     # Model name patterns to identify companies
     company_patterns = {
         "Anthropic": ["Claude"],
-        "Google": ["Gemini"],
+        "Google": ["Gemini", "Gemma"],
         "OpenAI": ["GPT", "o1"],
         "Meta": ["Llama"],
         "Mistral": ["Mistral", "Pixtral"],

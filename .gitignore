@@ -4,4 +4,5 @@ __pycache__/
 dataset/*
 responses/*
 
-browser/visualization.html
+visualizations/*.csv
+visualizations/*/*.html
