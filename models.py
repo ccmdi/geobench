@@ -486,7 +486,9 @@ class GPT4o(MultimodalModel):
     def __init__(self, api_key: str):
         super().__init__()
         self.api_key = api_key
-        
+    
+    @sleep_and_retry
+    @limits(calls=3, period=60)
     def query(self, image_path: str, prompt: str) -> str:
         media_type = get_image_media_type(image_path)
         
@@ -757,7 +759,7 @@ class O1(MultimodalModel):
         except Exception as e:
             print(f"OpenRouter API error: {str(e)}")
             raise Exception(f"OpenRouter API error: {str(e)}")
-
+        
 class Gemini2FlashThinkingExp(MultimodalModel):
     api_key_name = "OPENROUTER_API_KEY"
     
@@ -813,7 +815,62 @@ class Gemini2FlashThinkingExp(MultimodalModel):
         except Exception as e:
             print(f"OpenRouter API error: {str(e)}")
             raise Exception(f"OpenRouter API error: {str(e)}")
+
+class Llama4Maverick(MultimodalModel):
+    """Meta's Llama 4 Maverick multimodal model via OpenRouter API"""
+    api_key_name = "OPENROUTER_API_KEY"
+    
+    def __init__(self, api_key: str):
+        super().__init__()
+        self.api_key = api_key
+    
+    def query(self, image_path: str, prompt: str) -> str:
+        media_type = get_image_media_type(image_path)
         
+        with open(image_path, "rb") as img_file:
+            img_data = base64.b64encode(img_file.read()).decode("utf-8")
+
+        image_url = f"data:{media_type};base64,{img_data}"
+        
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+            "HTTP-Referer": "https://geobench.org"
+        }
+        
+        payload = {
+            "model": "meta-llama/llama-4-maverick",
+            "messages": [
+                {
+                    "role": "user", 
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": image_url}}
+                    ]
+                }
+            ],
+            "max_tokens": 1000,
+            "temperature": 0.4
+        }
+        
+        try:
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                json=payload
+            )
+            
+            if response.status_code != 200:
+                print(f"API error: {response.text}")
+                raise Exception(f"OpenRouter API error: {response.status_code}")
+                
+            response_json = response.json()
+            return response_json["choices"][0]["message"]["content"]
+            
+        except Exception as e:
+            print(f"OpenRouter API error: {str(e)}")
+            raise Exception(f"OpenRouter API error: {str(e)}")
+
 class Pixtral12b(MultimodalModel):
     api_key_name = "OPENROUTER_API_KEY"
     
@@ -1034,3 +1091,166 @@ class Phi4Instruct(MultimodalModel):
         except Exception as e:
             print(f"OpenRouter API error: {str(e)}")
             raise Exception(f"OpenRouter API error: {str(e)}")
+        
+
+class GPT4_1(MultimodalModel):
+    """OpenAI's GPT-4o multimodal model using direct REST API calls"""
+    api_key_name = "OPENAI_API_KEY"
+    
+    def __init__(self, api_key: str):
+        super().__init__()
+        self.api_key = api_key
+    
+    @sleep_and_retry
+    @limits(calls=3, period=60)
+    def query(self, image_path: str, prompt: str) -> str:
+        media_type = get_image_media_type(image_path)
+        
+        with open(image_path, "rb") as img_file:
+            img_data = base64.b64encode(img_file.read()).decode("utf-8")
+
+        image_url = f"data:{media_type};base64,{img_data}"
+        
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+        
+        payload = {
+            "model": "gpt-4.1",
+            "messages": [
+                {
+                    "role": "user", 
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": image_url}}
+                    ]
+                }
+            ],
+            "temperature": 0.4
+        }
+        
+        try:
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json=payload
+            )
+            
+            if response.status_code != 200:
+                print(f"API error: {response.text}")
+                raise Exception(f"OpenAI API error: {response.status_code}")
+                
+            response_json = response.json()
+            return response_json["choices"][0]["message"]["content"]
+            
+        except Exception as e:
+            print(f"OpenAI API error: {str(e)}")
+            raise Exception(f"OpenAI API error: {str(e)}")
+        
+
+class O4mini(MultimodalModel):
+    api_key_name = "OPENAI_API_KEY"
+    
+    def __init__(self, api_key: str):
+        super().__init__()
+        self.api_key = api_key
+    
+    @sleep_and_retry
+    @limits(calls=3, period=60)
+    def query(self, image_path: str, prompt: str) -> str:
+        media_type = get_image_media_type(image_path)
+        
+        with open(image_path, "rb") as img_file:
+            img_data = base64.b64encode(img_file.read()).decode("utf-8")
+
+        image_url = f"data:{media_type};base64,{img_data}"
+        
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+        
+        payload = {
+            "model": "o4-mini",
+            "messages": [
+                {
+                    "role": "user", 
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": image_url}}
+                    ]
+                }
+            ]
+        }
+        
+        try:
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json=payload
+            )
+            
+            if response.status_code != 200:
+                print(f"API error: {response.text}")
+                raise Exception(f"OpenAI API error: {response.status_code}")
+                
+            response_json = response.json()
+            return response_json["choices"][0]["message"]["content"]
+            
+        except Exception as e:
+            print(f"OpenAI API error: {str(e)}")
+            raise Exception(f"OpenAI API error: {str(e)}")
+        
+class O3(MultimodalModel):
+    api_key_name = "OPENAI_API_KEY"
+    
+    def __init__(self, api_key: str):
+        super().__init__()
+        self.api_key = api_key
+    
+    @sleep_and_retry
+    @limits(calls=2, period=60)
+    def query(self, image_path: str, prompt: str) -> str:
+        media_type = get_image_media_type(image_path)
+        
+        with open(image_path, "rb") as img_file:
+            img_data = base64.b64encode(img_file.read()).decode("utf-8")
+
+        image_url = f"data:{media_type};base64,{img_data}"
+        
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+        
+        payload = {
+            "model": "o3-2025-04-16",
+            "messages": [
+                {
+                    "role": "user", 
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": image_url}}
+                    ]
+                }
+            ]
+        }
+        
+        try:
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json=payload
+            )
+            
+            if response.status_code != 200:
+                print(f"API error: {response.text}")
+                raise Exception(f"OpenAI API error: {response.status_code}")
+                
+            response_json = response.json()
+            return response_json["choices"][0]["message"]["content"]
+            
+        except Exception as e:
+            print(f"OpenAI API error: {str(e)}")
+            raise Exception(f"OpenAI API error: {str(e)}")

@@ -56,16 +56,11 @@ def fill_missing_data(csv_path, metadata_path, output_dir=None, summary_only=Fal
     output_csv = os.path.join(output_dir, 'detailed_filled.csv')
     output_json = os.path.join(output_dir, 'summary.json')
     
-    try:
-        with open(metadata_path, "r") as f:
-            metadata = json.load(f)
-        
-        scale = calculate_scale(metadata["bounds"])
-        print(f"Calculated scale: {scale}")
-    except Exception as e:
-        print(f"Error reading metadata: {e}")
-        print("Using default scale of 800.0")
-        scale = 800.0
+    with open(metadata_path, "r") as f:
+        metadata = json.load(f)
+    
+    scale = calculate_scale(metadata["bounds"])
+    print(f"Calculated scale: {scale}")
     
     df = pd.read_csv(csv_path)
     
