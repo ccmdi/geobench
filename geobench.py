@@ -137,7 +137,7 @@ class GeoGuessrBenchmark:
         if args.sample_id is not None:
             locations_to_test = [loc for loc in self.locations if loc.id == str(args.sample_id)]
             if not locations_to_test:
-                raise ValueError(f"ID '{args.sample_id}' not found in dataset")
+                raise ValueError(f"Image ID '{args.sample_id}' not found in dataset")
         elif args.samples and args.samples < len(self.locations):
             import random
             locations_to_test = random.sample(self.locations, args.samples)
