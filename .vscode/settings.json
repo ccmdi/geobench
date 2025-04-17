@@ -1,0 +1,14 @@
+{
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.env": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/img": true,
+        "LICENSE": true,
+    },
+    "[plaintext]": {
+        "editor.wordWrap": "on"
+    },
+    "explorer.sortOrder": "modified"
+}
