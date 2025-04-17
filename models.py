@@ -138,13 +138,13 @@ class AnthropicClient(BaseMultimodalModel):
 
 class GoogleClient(BaseMultimodalModel):
     api_key_name = "GEMINI_API_KEY"
-    base_url = "https://generativelanguage.googleapis.com/v1"
+    base_url = "https://generativelanguage.googleapis.com"
     api_version_path: str = "" # e.g., "beta/" for experimental versions
 
     def _get_endpoint(self) -> str:
         action = "generateContent"
         version_path = getattr(self, 'api_version_path', '')
-        return f"{self.base_url}/{version_path}models/{self.model_identifier}:{action}?key={self.api_key}"
+        return f"{self.base_url}/{version_path}/models/{self.model_identifier}:{action}?key={self.api_key}"
 
     def _build_headers(self) -> dict:
         return {"Content-Type": "application/json"}
@@ -273,6 +273,17 @@ class Gemini2Flash(GoogleClient):
     name = "Gemini 2.0 Flash"
     model_identifier = "gemini-2.0-flash"
     rate_limit = 10
+class Gemini2_5Pro(GoogleClient):
+    name = "Gemini 2.5 Pro Experimental"
+    model_identifier = "gemini-2.5-pro-preview-03-25"
+    rate_limit = 2
+    api_version_path = "v1beta"
+class Gemini2_5Flash(GoogleClient):
+    name = "Gemini 2.5 Flash Experimental"
+    model_identifier = "gemini-2.5-flash-preview-04-17"
+    rate_limit = 2
+    api_version_path = "v1beta"
+
 
 # OpenAI Models
 class GPT4oMini(OpenAIClient):
@@ -294,6 +305,7 @@ class O3(OpenAIClient):
     name = "o3"
     model_identifier = "o3"
     rate_limit = 2
+    reasoning_effort = "medium"
 
     # NOT SUPPORTED
     max_tokens = -1
@@ -310,7 +322,7 @@ class O3high(OpenAIClient):
 class O4mini(OpenAIClient):
     name = "o4-mini"
     model_identifier = "o4-mini"
-    rate_limit = 3
+    rate_limit = 5
 
     # NOT SUPPORTED
     max_tokens = -1
@@ -318,13 +330,12 @@ class O4mini(OpenAIClient):
 class O4minihigh(OpenAIClient):
     name = "o4-mini-high"
     model_identifier = "o4-mini"
-    rate_limit = 3
+    rate_limit = 5
     reasoning_effort = "high"
 
     # NOT SUPPORTED
     max_tokens = -1
     temperature = -1
-
 
 # OpenRouter Models
 class Qwen25VL72b(OpenRouterClient):
