@@ -53,7 +53,7 @@ def fill_missing_data(csv_path, metadata_path, output_dir=None, summary_only=Fal
     
     os.makedirs(output_dir, exist_ok=True)
     
-    output_csv = os.path.join(output_dir, 'detailed_filled.csv')
+    output_csv = os.path.join(output_dir, 'detailed.csv')
     output_json = os.path.join(output_dir, 'summary.json')
     
     with open(metadata_path, "r") as f:
