@@ -97,8 +97,8 @@ class GeoGuessrBenchmark:
         try:
             model_class = globals()[model]
             
-            if not issubclass(model_class, MultimodalModel):
-                raise ValueError(f"{model} is not a valid MultimodalModel class")
+            if not issubclass(model_class, BaseMultimodalModel):
+                raise ValueError(f"{model} is not a valid BaseMultimodalModel class")
                 
             if not api_key and model_class.api_key_name:
                 api_key = os.getenv(model_class.api_key_name)
@@ -273,7 +273,7 @@ class GeoGuessrBenchmark:
         
         return {
             "model": self.model.name,
-            "test": self.dataset_path,
+            "test": os.path.basename(self.dataset_path),
             "n": total,
             "country_success_rate": country_correct / total if total > 0 else 0,
             "refusal_rate": refusals / total if total > 0 else 0,
