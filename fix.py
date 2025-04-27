@@ -26,7 +26,9 @@ def calculate_score(distance, scale):
 def compile_summary(df: pd.DataFrame) -> Dict:
     """Compile benchmark results into a summary dictionary"""
     total = len(df)
-    country_correct = sum(1 for _, r in df.iterrows() if r.get('country_correct', False))
+    # Only count as correct if country_correct is True AND not refused
+    country_correct = sum(1 for _, r in df.iterrows() 
+                        if r.get('country_correct', False) and not r.get('refused', False))
     refusals = sum(1 for _, r in df.iterrows() if r.get('refused', False))
     
     valid_df = df[~df['refused'].fillna(False)]
