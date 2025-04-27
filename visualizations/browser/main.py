@@ -37,7 +37,7 @@ def extract_model_name(model_dir):
     """
     return model_dir.split('_')[0] if '_' in model_dir else model_dir
 
-def create_geoguessr_visualization(responses_dir="../responses"):
+def create_geoguessr_visualization(responses_dir="../../responses"):
     """
     Create an HTML visualization of GeoGuessr benchmark results,
     showing all models' guesses for each location with company-specific colors.

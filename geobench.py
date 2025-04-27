@@ -27,6 +27,10 @@ lng: [longitude as a decimal number]
 You can provide additional reasoning or explanation, but these three specific lines MUST be included.
 """
 
+SEARCH = """
+ You have access to Google Search, which you may make use of.
+"""
+
 from models import *
 
 load_dotenv()
@@ -165,7 +169,7 @@ class GeoGuessrBenchmark:
     def _evaluate_location(self, location: Location) -> BenchmarkResult:
         for attempt in range(self.max_retries):
             try:
-                response = self.model.query(location.image_path, SYSTEM_PROMPT)
+                response = self.model.query(location.image_path, SYSTEM_PROMPT, run_folder, location.id)
                 
                 os.makedirs(f"{run_folder}/output/", exist_ok=True)
                 
