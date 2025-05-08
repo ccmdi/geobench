@@ -11,6 +11,8 @@ import haversine
 from dotenv import load_dotenv
 from geo2p.canon import are_same_country
 
+from scripts.parser import parse_response, Guess
+
 SYSTEM_PROMPT = """
 You are participating in a geolocation challenge. Based on the provided image:
 
@@ -28,7 +30,8 @@ You can provide additional reasoning or explanation, but these three specific li
 """
 
 SEARCH = """
- You have access to Google Search, which you may make use of.
+
+ You have access to Google Search, which you should use to improve your answer.
 """
 
 from models import *
@@ -51,16 +54,6 @@ class Location:
         filename = os.path.basename(self.image_path)
         name_without_ext = os.path.splitext(filename)[0]
         return name_without_ext
-
-@dataclass
-class Guess:
-    country: str
-    lat: float
-    lng: float
-    
-    @property
-    def coordinates(self) -> Tuple[float, float]:
-        return (self.lat, self.lng)
 
 @dataclass
 class BenchmarkResult:
@@ -177,7 +170,7 @@ class GeoGuessrBenchmark:
                     f.write(response)
                 
                 try:
-                    guess = self._parse_response(response)
+                    guess = parse_response(response)
                     result = BenchmarkResult(location=location, guess=guess)
                     result.calculate_metrics(self.scale)
                     return result
@@ -213,55 +206,6 @@ class GeoGuessrBenchmark:
             refused=True,
             error_message="Max retries exceeded"
         )
-    
-    def _parse_response(self, response: str) -> Guess:
-        country_match = re.search(
-            r"(?:\*\*)?(?:C|c)ountry(?:\*\*)?:\s*([^,\r\n]+)", 
-            response
-        )
-        
-        lat_match = re.search(
-            r"(?:\*\*)?(?:L|l)at(?:itude)?(?:\*\*)?(?::|=|\s+)?\s*([-+]?\d+\.?\d*)",
-            response
-        )
-
-        lng_match = re.search(
-            r"(?:\*\*)?(?:L|l)(?:ng|ong(?:itude)?)(?:\*\*)?(?::|=|\s+)?\s*([-+]?\d+\.?\d*)",
-            response
-        )
-
-        missing_fields = []
-        if not country_match:
-            missing_fields.append("country")
-        if not lat_match:
-            missing_fields.append("latitude")
-        if not lng_match:
-            missing_fields.append("longitude")
-            
-        if missing_fields:
-            raise ValueError(f"Response missing required fields: {', '.join(missing_fields)}")
-        
-        try:
-            country = country_match.group(1).strip()
-        except (AttributeError, IndexError) as e:
-            raise ValueError(f"Failed to parse country: {e}")
-            
-        try:
-            lat = float(lat_match.group(1).strip())
-        except (AttributeError, IndexError, ValueError) as e:
-            raise ValueError(f"Failed to parse latitude: {e}")
-            
-        try:
-            lng = float(lng_match.group(1).strip())
-        except (AttributeError, IndexError, ValueError) as e:
-            raise ValueError(f"Failed to parse longitude: {e}")
-        
-        if not -90 <= lat <= 90:
-            raise ValueError(f"Invalid latitude value: {lat} (must be between -90 and 90)")
-        if not -180 <= lng <= 180:
-            raise ValueError(f"Invalid longitude value: {lng} (must be between -180 and 180)")
-            
-        return Guess(country=country, lat=lat, lng=lng)
     
     def _compile_results(self) -> Dict:
         total = len(self.results)

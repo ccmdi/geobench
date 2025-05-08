@@ -6,3 +6,5 @@ responses/*
 
 visualizations/*.csv
 visualizations/*/*.html
+
+scripts/private/*
