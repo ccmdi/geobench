@@ -9,7 +9,7 @@ import datetime
 import argparse
 import haversine
 from dotenv import load_dotenv
-from canon import are_same_country
+from geo2p.canon import are_same_country
 
 SYSTEM_PROMPT = """
 You are participating in a geolocation challenge. Based on the provided image:

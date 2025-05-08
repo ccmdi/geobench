@@ -7,8 +7,8 @@ from PIL import Image
 import aiohttp
 from typing import List, Dict, Optional
 
-from geoguessr import GeoGuessr
-from pano import Pano
+from geo2p.geoguessr import GeoGuessr
+from geo2p.pano import Pano
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
