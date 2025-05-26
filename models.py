@@ -433,7 +433,7 @@ class O4minihigh(OpenAIClient):
     temperature = -1
 
 # OpenRouter Models
-class Qwen25VL72b(OpenRouterClient):
+class Qwen2_5_VL_72b(OpenRouterClient):
     provider = "Alibaba"
     name = "Qwen2.5-VL-72B"
     model_identifier = "qwen/qwen2.5-vl-72b-instruct"
@@ -442,10 +442,10 @@ class Llama4Maverick(OpenRouterClient):
     provider = "Meta"
     name = "Llama 4 Maverick"
     model_identifier = "meta-llama/llama-4-maverick"
-class Pixtral12b(OpenRouterClient): 
+class Pixtral_12b(OpenRouterClient): 
     provider = "Mistral"
     model_identifier = "mistralai/pixtral-12b"
-class Gemma_3_27b(OpenRouterClient):
+class Gemma3_27b(OpenRouterClient):
     provider = "Google"
     name = "Gemma 3 27B"
     model_identifier = "google/gemma-3-27b-it"
