@@ -141,8 +141,19 @@ class GeoGuessrBenchmark:
                 
         self.results = []
         
-        for location in locations_to_test:
-            print(f"Testing location: {location.id}")
+        start_index = 0
+        if args.continue_from is not None:
+            if 1 <= args.continue_from <= len(locations_to_test):
+                start_index = args.continue_from - 1 # Adjust to 0-based index
+            else:
+                raise ValueError(f"Invalid continue-from value: {args.continue_from}. Must be between 1 and {len(locations_to_test)}")
+
+        for i, location in enumerate(locations_to_test):
+            if i < start_index:
+                print(f"Skipping location: {location.id} (continuing from {args.continue_from})")
+                continue
+
+            print(f"Testing location: {location.id} ({i+1}/{len(locations_to_test)})")
             result = self._evaluate_location(location)
             self.results.append(result)
             
@@ -314,6 +325,8 @@ if __name__ == "__main__":
                         help="Model provider to use (default: 'claude')")
     parser.add_argument("--max-retries", type=int, default=3,
                         help="Maximum number of retries for API/network errors (default: 3)")
+    parser.add_argument("--continue-from", type=int, default=None,
+                        help="Continue from a specific sample number (1-indexed)")
     args = parser.parse_args()
     
     dataset_path = f"dataset/{args.dataset}"
