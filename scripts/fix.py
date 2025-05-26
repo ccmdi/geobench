@@ -1,9 +1,12 @@
+# fix.py
+# Update the CSV and summary to be correct from edited results
+
 import pandas as pd
 import math
 import os
 import json
 import argparse
-from canon import are_same_country
+from geo2p.canon import are_same_country
 from typing import Dict
 import haversine
 

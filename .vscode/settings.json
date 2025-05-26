@@ -10,7 +10,6 @@
     "[plaintext]": {
         "editor.wordWrap": "on"
     },
-    "explorer.sortOrder": "modified",
     "git.autoRepositoryDetection": true
     
 }

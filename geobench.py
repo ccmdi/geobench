@@ -9,7 +9,9 @@ import datetime
 import argparse
 import haversine
 from dotenv import load_dotenv
-from canon import are_same_country
+from geo2p.canon import are_same_country
+
+from scripts.parser import parse_response, Guess
 
 SYSTEM_PROMPT = """
 You are participating in a geolocation challenge. Based on the provided image:
@@ -28,7 +30,8 @@ You can provide additional reasoning or explanation, but these three specific li
 """
 
 SEARCH = """
- You have access to Google Search, which you may make use of.
+
+ You have access to Google Search, which you should use to improve your answer.
 """
 
 from models import *
@@ -51,16 +54,6 @@ class Location:
         filename = os.path.basename(self.image_path)
         name_without_ext = os.path.splitext(filename)[0]
         return name_without_ext
-
-@dataclass
-class Guess:
-    country: str
-    lat: float
-    lng: float
-    
-    @property
-    def coordinates(self) -> Tuple[float, float]:
-        return (self.lat, self.lng)
 
 @dataclass
 class BenchmarkResult:
@@ -148,8 +141,19 @@ class GeoGuessrBenchmark:
                 
         self.results = []
         
-        for location in locations_to_test:
-            print(f"Testing location: {location.id}")
+        start_index = 0
+        if args.continue_from is not None:
+            if 1 <= args.continue_from <= len(locations_to_test):
+                start_index = args.continue_from - 1 # Adjust to 0-based index
+            else:
+                raise ValueError(f"Invalid continue-from value: {args.continue_from}. Must be between 1 and {len(locations_to_test)}")
+
+        for i, location in enumerate(locations_to_test):
+            if i < start_index:
+                print(f"Skipping location: {location.id} (continuing from {args.continue_from})")
+                continue
+
+            print(f"Testing location: {location.id} ({i+1}/{len(locations_to_test)})")
             result = self._evaluate_location(location)
             self.results.append(result)
             
@@ -177,7 +181,7 @@ class GeoGuessrBenchmark:
                     f.write(response)
                 
                 try:
-                    guess = self._parse_response(response)
+                    guess = parse_response(response)
                     result = BenchmarkResult(location=location, guess=guess)
                     result.calculate_metrics(self.scale)
                     return result
@@ -214,55 +218,6 @@ class GeoGuessrBenchmark:
             error_message="Max retries exceeded"
         )
     
-    def _parse_response(self, response: str) -> Guess:
-        country_match = re.search(
-            r"(?:\*\*)?(?:C|c)ountry(?:\*\*)?:\s*([^,\r\n]+)", 
-            response
-        )
-        
-        lat_match = re.search(
-            r"(?:\*\*)?(?:L|l)at(?:itude)?(?:\*\*)?(?::|=|\s+)?\s*([-+]?\d+\.?\d*)",
-            response
-        )
-
-        lng_match = re.search(
-            r"(?:\*\*)?(?:L|l)(?:ng|ong(?:itude)?)(?:\*\*)?(?::|=|\s+)?\s*([-+]?\d+\.?\d*)",
-            response
-        )
-
-        missing_fields = []
-        if not country_match:
-            missing_fields.append("country")
-        if not lat_match:
-            missing_fields.append("latitude")
-        if not lng_match:
-            missing_fields.append("longitude")
-            
-        if missing_fields:
-            raise ValueError(f"Response missing required fields: {', '.join(missing_fields)}")
-        
-        try:
-            country = country_match.group(1).strip()
-        except (AttributeError, IndexError) as e:
-            raise ValueError(f"Failed to parse country: {e}")
-            
-        try:
-            lat = float(lat_match.group(1).strip())
-        except (AttributeError, IndexError, ValueError) as e:
-            raise ValueError(f"Failed to parse latitude: {e}")
-            
-        try:
-            lng = float(lng_match.group(1).strip())
-        except (AttributeError, IndexError, ValueError) as e:
-            raise ValueError(f"Failed to parse longitude: {e}")
-        
-        if not -90 <= lat <= 90:
-            raise ValueError(f"Invalid latitude value: {lat} (must be between -90 and 90)")
-        if not -180 <= lng <= 180:
-            raise ValueError(f"Invalid longitude value: {lng} (must be between -180 and 180)")
-            
-        return Guess(country=country, lat=lat, lng=lng)
-    
     def _compile_results(self) -> Dict:
         total = len(self.results)
         country_correct = sum(1 for r in self.results if r.country_correct)
@@ -285,6 +240,7 @@ class GeoGuessrBenchmark:
             "average_score": avg_score,
             "median_distance_km": median_distance,
             "median_score": median_score,
+            "provider": self.model.provider,
             "detailed_results": self.results
         }
     
@@ -370,6 +326,8 @@ if __name__ == "__main__":
                         help="Model provider to use (default: 'claude')")
     parser.add_argument("--max-retries", type=int, default=3,
                         help="Maximum number of retries for API/network errors (default: 3)")
+    parser.add_argument("--continue-from", type=int, default=None,
+                        help="Continue from a specific sample number (1-indexed)")
     args = parser.parse_args()
     
     dataset_path = f"dataset/{args.dataset}"
