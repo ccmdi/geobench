@@ -144,7 +144,7 @@ class AnthropicClient(BaseMultimodalModel):
 class GoogleClient(BaseMultimodalModel):
     api_key_name = "GEMINI_API_KEY"
     base_url = "https://generativelanguage.googleapis.com"
-    api_version_path: str = "" # e.g., "beta/" for experimental versions
+    api_version_path: str = "v1" # e.g., "beta/" for experimental versions
     tools: str = None
 
     def _get_endpoint(self) -> str:
@@ -237,14 +237,26 @@ class OpenAIClient(BaseMultimodalModel):
             if status != "completed":
                 error_details = response_json.get("error") or response_json.get("incomplete_details") or f"Status: {status}"
                 raise ValueError(f"Response generation not completed: {error_details}")
-            
-            content_items = response_json['output'][0]['content']
 
+            message_output = None
+            for item in response_json.get('output', []):
+                if item.get('type') == 'message' and item.get('status') == 'completed':
+                    message_output = item
+                    break
+            
+            if not message_output:
+                raise ValueError(f"No completed message found in OpenAI response: {response_json}")
+
+            content_items = message_output.get('content', [])
+            
             response_text = ''.join(
                 item.get('text', '')
                 for item in content_items
                 if item.get('type') == 'output_text'
             )
+
+            if not response_text and content_items:
+                raise ValueError(f"No completed message found in OpenAI response: {response_json}")
 
             return response_text
         except (KeyError, IndexError, TypeError, ValueError, AttributeError) as e:
@@ -303,6 +315,24 @@ class Claude3_7SonnetThinking(AnthropicClient):
     enable_thinking = True
     rate_limit = 2
     beta_header = "output-128k-2025-02-19"
+class Claude4Sonnet(AnthropicClient):
+    name = "Claude 4 Sonnet"
+    model_identifier = "claude-sonnet-4-20250514"
+class Claude4Opus(AnthropicClient):
+    name = "Claude 4 Opus"
+    model_identifier = "claude-opus-4-20250514"
+class Claude4SonnetThinking(AnthropicClient):
+    name = "Claude 4 Sonnet (Thinking)"
+    model_identifier = "claude-sonnet-4-20250514"
+    enable_thinking = True
+    rate_limit = 2
+    beta_header = "output-128k-2025-02-19"
+class Claude4OpusThinking(AnthropicClient):
+    name = "Claude 4 Opus (Thinking)"
+    model_identifier = "claude-opus-4-20250514"
+    enable_thinking = True
+    rate_limit = 2
+    beta_header = "output-128k-2025-02-19"
 
 
 # Google Models
@@ -330,10 +360,15 @@ class Gemini2_5ProSearch(GoogleClient):
     api_version_path = "v1beta"
     
     tools = [{"google_search": {}}]
-class Gemini2_5Flash(GoogleClient):
-    name = "Gemini 2.5 Flash Preview"
+class Gemini2_5Flash_0417(GoogleClient):
+    name = "Gemini 2.5 Flash Preview (04-17)"
     model_identifier = "gemini-2.5-flash-preview-04-17"
-    rate_limit = 2
+    rate_limit = 6
+    api_version_path = "v1beta"
+class Gemini2_5Flash_0520(GoogleClient):
+    name = "Gemini 2.5 Flash Preview (05-20)"
+    model_identifier = "gemini-2.5-flash-preview-05-20"
+    rate_limit = 6
     api_version_path = "v1beta"
 
 
@@ -353,6 +388,10 @@ class O1(OpenAIClient):
     name = "o1"
     model_identifier = "o1"
     rate_limit = 2
+
+    # NOT SUPPORTED
+    max_tokens = -1
+    temperature = -1
 class O3(OpenAIClient):
     name = "o3"
     model_identifier = "o3"
@@ -360,8 +399,8 @@ class O3(OpenAIClient):
     reasoning_effort = "medium"
 
     # NOT SUPPORTED
-    # max_tokens = -1
-    # temperature = -1
+    max_tokens = -1
+    temperature = -1
 class O3high(OpenAIClient):
     name = "o3-high"
     model_identifier = "o3"
@@ -370,8 +409,8 @@ class O3high(OpenAIClient):
     detail = "high"
 
     # NOT SUPPORTED
-    # max_tokens = -1
-    # temperature = -1
+    max_tokens = -1
+    temperature = -1
 class O4mini(OpenAIClient):
     name = "o4-mini"
     model_identifier = "o4-mini"
@@ -392,7 +431,7 @@ class O4minihigh(OpenAIClient):
 
 # OpenRouter Models
 class Qwen25VL72b(OpenRouterClient):
-    name = "Qwen 2.5 VL 72B Instruct"
+    name = "Qwen2.5-VL-72B"
     model_identifier = "qwen/qwen2.5-vl-72b-instruct"
     rate_limit = 20
 class Llama4Maverick(OpenRouterClient):
@@ -401,8 +440,8 @@ class Llama4Maverick(OpenRouterClient):
 class Pixtral12b(OpenRouterClient): model_identifier = "mistralai/pixtral-12b"
 class Gemma27b(OpenRouterClient):
     name = "Gemma 27B"
-    model_identifier = "google/gemma-3-27b-it:free"
-    rate_limit = 10
+    model_identifier = "google/gemma-3-27b-it"
+    rate_limit = 5
 class Phi4Instruct(OpenRouterClient):
     name = "Phi 4 Instruct"
     model_identifier = "microsoft/phi-4-multimodal-instruct"
