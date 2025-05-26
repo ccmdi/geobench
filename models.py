@@ -88,6 +88,7 @@ class BaseMultimodalModel(ABC):
 
 
 class AnthropicClient(BaseMultimodalModel):
+    provider = "Anthropic"
     api_key_name = "ANTHROPIC_API_KEY"
     base_url = "https://api.anthropic.com/v1/messages"
     anthropic_version: str = "2023-06-01"
@@ -142,6 +143,7 @@ class AnthropicClient(BaseMultimodalModel):
 
 
 class GoogleClient(BaseMultimodalModel):
+    provider = "Google"
     api_key_name = "GEMINI_API_KEY"
     base_url = "https://generativelanguage.googleapis.com"
     api_version_path: str = "v1" # e.g., "beta/" for experimental versions
@@ -182,6 +184,7 @@ class GoogleClient(BaseMultimodalModel):
 
 
 class OpenAIClient(BaseMultimodalModel):
+    provider = "OpenAI"
     api_key_name = "OPENAI_API_KEY"
     base_url = "https://api.openai.com/v1/responses"
 
@@ -431,17 +434,23 @@ class O4minihigh(OpenAIClient):
 
 # OpenRouter Models
 class Qwen25VL72b(OpenRouterClient):
+    provider = "Alibaba"
     name = "Qwen2.5-VL-72B"
     model_identifier = "qwen/qwen2.5-vl-72b-instruct"
     rate_limit = 20
 class Llama4Maverick(OpenRouterClient):
+    provider = "Meta"
     name = "Llama 4 Maverick"
     model_identifier = "meta-llama/llama-4-maverick"
-class Pixtral12b(OpenRouterClient): model_identifier = "mistralai/pixtral-12b"
-class Gemma27b(OpenRouterClient):
-    name = "Gemma 27B"
+class Pixtral12b(OpenRouterClient): 
+    provider = "Mistral"
+    model_identifier = "mistralai/pixtral-12b"
+class Gemma_3_27b(OpenRouterClient):
+    provider = "Google"
+    name = "Gemma 3 27B"
     model_identifier = "google/gemma-3-27b-it"
     rate_limit = 5
 class Phi4Instruct(OpenRouterClient):
+    provider = "Microsoft"
     name = "Phi 4 Instruct"
     model_identifier = "microsoft/phi-4-multimodal-instruct"

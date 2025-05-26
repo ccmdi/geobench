@@ -240,6 +240,7 @@ class GeoGuessrBenchmark:
             "average_score": avg_score,
             "median_distance_km": median_distance,
             "median_score": median_score,
+            "provider": self.model.provider,
             "detailed_results": self.results
         }
     
