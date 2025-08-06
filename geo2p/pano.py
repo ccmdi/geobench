@@ -1,5 +1,5 @@
 from PIL import Image
-from e2p import Equirectangular
+from .e2p import Equirectangular
 import asyncio, aiohttp
 import io
 import numpy as np
@@ -15,6 +15,7 @@ class Pano:
         self.zoom = 4
         self.dimensions = None
         self.driving_direction = None
+        self.unofficial = False
 
         if lat is not None and lng is not None:
             self.pano_id = None
@@ -265,7 +266,6 @@ class Pano:
             async with session.post(url, json=request_data, headers=headers) as response:
                 try:
                     data = await response.json()
-                    print(data)
 
                     self.dimensions = data[1][0][2][3][0][4][0]  # [height, width]
                     self.driving_direction = data[1][0][5][0][1][2][0]  # Driving direction
