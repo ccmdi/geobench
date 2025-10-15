@@ -356,6 +356,11 @@ class Gemini2_5Pro(GoogleClient):
     model_identifier = "gemini-2.5-pro-preview-05-06"
     rate_limit = 2
     api_version_path = "v1beta"
+class Gemini2_5Pro0605(GoogleClient):
+    name = "Gemini 2.5 Pro (06-05)"
+    model_identifier = "gemini-2.5-pro-preview-06-05"
+    rate_limit = 5
+    api_version_path = "v1beta"
 class Gemini2_5ProSearch(GoogleClient):
     name = "Gemini 2.5 Pro (with Search)"
     model_identifier = "gemini-2.5-pro-preview-05-06"
@@ -431,6 +436,14 @@ class O4minihigh(OpenAIClient):
     # NOT SUPPORTED
     max_tokens = -1
     temperature = -1
+class GPT5(OpenAIClient):
+    provider = "OpenAI"
+    name = "GPT-5"
+    model_identifier = "gpt-5-2025-08-07"
+    rate_limit = 2
+
+    max_tokens = -1
+    temperature = -1
 
 # OpenRouter Models
 class Qwen2_5_VL_72b(OpenRouterClient):
@@ -454,3 +467,22 @@ class Phi4Instruct(OpenRouterClient):
     provider = "Microsoft"
     name = "Phi 4 Instruct"
     model_identifier = "microsoft/phi-4-multimodal-instruct"
+class Grok4(OpenRouterClient):
+    provider = "OpenAI"
+    name = "Grok 4"
+    model_identifier = "x-ai/grok-4"
+    rate_limit = 2
+
+# class HorizonBeta(OpenRouterClient):
+#     provider = "OpenAI"
+#     name = "Horizon Beta"
+#     model_identifier = "openrouter/horizon-beta"
+#     rate_limit = 2
+
+class Claude4_5Sonnet(AnthropicClient):
+    name = "Claude 4.5 Sonnet"
+    model_identifier = "claude-sonnet-4-5-20250929"
+    rate_limit = 2
+    enable_thinking = True
+    beta_header = "output-128k-2025-02-19"
+    temperature = 0.4
