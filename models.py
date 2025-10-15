@@ -336,6 +336,13 @@ class Claude4OpusThinking(AnthropicClient):
     enable_thinking = True
     rate_limit = 2
     beta_header = "output-128k-2025-02-19"
+class Claude4_5SonnetThinking(AnthropicClient):
+    name = "Claude 4.5 Sonnet (Thinking)"
+    model_identifier = "claude-sonnet-4-5-20250929"
+    rate_limit = 2
+    enable_thinking = True
+    beta_header = "output-128k-2025-02-19"
+    temperature = 0.4
 
 
 # Google Models
@@ -478,11 +485,3 @@ class Grok4(OpenRouterClient):
 #     name = "Horizon Beta"
 #     model_identifier = "openrouter/horizon-beta"
 #     rate_limit = 2
-
-class Claude4_5Sonnet(AnthropicClient):
-    name = "Claude 4.5 Sonnet"
-    model_identifier = "claude-sonnet-4-5-20250929"
-    rate_limit = 2
-    enable_thinking = True
-    beta_header = "output-128k-2025-02-19"
-    temperature = 0.4
