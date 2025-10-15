@@ -41,6 +41,7 @@ class GeoGuessr:
                 print(game_response)
                 logging.error(f"Error creating game: {game_response.status}")
                 self.game = None
+                return None
             
             self.game = await game_response.json()
             return self.game
@@ -51,7 +52,7 @@ class GeoGuessr:
         """
         logging.info("guess_and_advance")
         if self.game['round'] >= 5:
-            await self.create_geoguessr_game()
+            await self.create_geoguessr_game(map_id=self.map_id)
         if not self.game:
             return None
         
