@@ -1,0 +1,31 @@
+[project]
+name = "geobench"
+version = "0.1.0"
+description = "GeoGuessr benchmark tool for multimodal AI models"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "aiohttp==3.12.4",
+    "haversine==2.9.0",
+    "numpy==2.3.1",
+    "opencv-python==4.10.0.84",
+    "pandas==2.3.1",
+    "Pillow==11.3.0",
+    "python-dotenv==1.1.1",
+    "ratelimit==2.2.1",
+    "requests==2.32.4",
+]
+
+[project.optional-dependencies]
+viz = [
+    "matplotlib==3.10.3",
+    "seaborn==0.13.2",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["geo2p*", "scripts*"]
+exclude = ["venv*", "dataset*", "responses*", "visualizations*", "internal*", "img*", "site*"]
