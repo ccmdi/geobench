@@ -10,6 +10,8 @@ import argparse
 import haversine
 from dotenv import load_dotenv
 from geo2p.canon import are_same_country
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 from scripts.parser import parse_response, Guess
 
@@ -77,11 +79,15 @@ class BenchmarkResult:
             self.guess.coordinates
         )
         
-        self.score = calculate_score(self.distance_km / 1000, scale)
+        if self.distance_km is not None:
+            self.score = calculate_score(self.distance_km / 1000, scale)
+        else:
+            self.score = None
+            
         self.country_correct = are_same_country(self.location.country, self.guess.country)
 
 class GeoGuessrBenchmark:
-    def __init__(self, 
+    def __init__(self,
                  dataset_path: str,
                  model: str = "ClaudeHaiku",
                  api_key: Optional[str] = None,
@@ -90,6 +96,8 @@ class GeoGuessrBenchmark:
         self.locations = self._load_dataset()
         self.results = []
         self.max_retries = max_retries
+        self.results_lock = threading.Lock()
+        self.run_folder = ""
         
         try:
             model_class = globals()[model]
@@ -138,9 +146,9 @@ class GeoGuessrBenchmark:
         elif args.samples and args.samples < len(self.locations):
             import random
             locations_to_test = random.sample(self.locations, args.samples)
-                
+
         self.results = []
-        
+
         start_index = 0
         if args.continue_from is not None:
             if 1 <= args.continue_from <= len(locations_to_test):
@@ -148,36 +156,77 @@ class GeoGuessrBenchmark:
             else:
                 raise ValueError(f"Invalid continue-from value: {args.continue_from}. Must be between 1 and {len(locations_to_test)}")
 
-        for i, location in enumerate(locations_to_test):
-            if i < start_index:
-                print(f"Skipping location: {location.id} (continuing from {args.continue_from})")
-                continue
+        # Filter out skipped locations
+        locations_to_process = [(i, loc) for i, loc in enumerate(locations_to_test) if i >= start_index]
 
-            print(f"Testing location: {location.id} ({i+1}/{len(locations_to_test)})")
+        if args.parallel and args.parallel > 1:
+            self._parallel_workers = args.parallel
+            self._run_parallel(locations_to_process, len(locations_to_test))
+        else:
+            self._run_sequential(locations_to_process, len(locations_to_test))
+
+        return self._compile_results()
+
+    def _run_sequential(self, locations_to_process, total_count):
+        for i, location in locations_to_process:
+            print(f"Testing location: {location.id} ({i+1}/{total_count})")
             result = self._evaluate_location(location)
             self.results.append(result)
-            
-            if result.refused:
-                print(f"  ✗ REFUSED: {result.error_message}")
-            else:
-                status = "✓" if result.country_correct else "✗"
-                distance = f"{result.distance_km:.1f}km" if result.distance_km is not None else "N/A"
-                score = result.score if result.score is not None else "0"
-                print(f"  {status} Distance: {distance}, Score: {score}")
-            
-            # Save incremental results to avoid losing progress
-            self._save_incremental_results(run_folder + "/results/")
-        
-        return self._compile_results()
+            self._print_result(result)
+            self._save_incremental_results()
+
+    def _run_parallel(self, locations_to_process, total_count):
+        results_with_index = []
+        num_workers = getattr(self, '_parallel_workers', 1)
+
+        with ThreadPoolExecutor(max_workers=num_workers) as executor:
+            future_to_location = {
+                executor.submit(self._evaluate_location, loc): (i, loc)
+                for i, loc in locations_to_process
+            }
+
+            for completed_count, future in enumerate(as_completed(future_to_location), 1):
+                i, location = future_to_location[future]
+
+                try:
+                    result = future.result()
+                except Exception as e:
+                    print(f"Error processing location {location.id}: {str(e)}")
+                    result = BenchmarkResult(
+                        location=location,
+                        guess=None,
+                        refused=True,
+                        error_message=str(e)
+                    )
+
+                with self.results_lock:
+                    results_with_index.append((i, result))
+                    # Sort and update results list to maintain order
+                    results_with_index.sort(key=lambda x: x[0])
+                    self.results = [r for _, r in results_with_index]
+                    # Save after each completion
+                    self._save_incremental_results()
+
+                print(f"Completed location: {location.id} ({completed_count}/{len(locations_to_process)})")
+                self._print_result(result)
+
+    def _print_result(self, result):
+        if result.refused:
+            print(f"  ✗ REFUSED: {result.error_message}")
+        else:
+            status = "✓" if result.country_correct else "✗"
+            distance = f"{result.distance_km:.1f}km" if result.distance_km is not None else "N/A"
+            score = result.score if result.score is not None else "0"
+            print(f"  {status} Distance: {distance}, Score: {score}")
     
     def _evaluate_location(self, location: Location) -> BenchmarkResult:
         for attempt in range(self.max_retries):
             try:
-                response = self.model.query(location.image_path, SYSTEM_PROMPT, run_folder, location.id)
-                
-                os.makedirs(f"{run_folder}/output/", exist_ok=True)
-                
-                with open(f"{run_folder}/output/{location.id}.txt", "w", encoding="utf-8") as f:
+                response = self.model.query(location.image_path, SYSTEM_PROMPT, self.run_folder, location.id)
+
+                os.makedirs(f"{self.run_folder}/output/", exist_ok=True)
+
+                with open(f"{self.run_folder}/output/{location.id}.txt", "w", encoding="utf-8") as f:
                     f.write(response)
                 
                 try:
@@ -277,9 +326,13 @@ class GeoGuessrBenchmark:
             
         pd.DataFrame(records).to_csv(f"{output_path}detailed.csv", index=False)
     
-    def _save_incremental_results(self, output_path: str):
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        
+    def _save_incremental_results(self):
+        if not self.run_folder:
+            return
+
+        output_path = f"{self.run_folder}/results/"
+        os.makedirs(output_path, exist_ok=True)
+
         records = []
         for r in self.results:
             record = {
@@ -290,7 +343,7 @@ class GeoGuessrBenchmark:
                 "refused": r.refused,
                 "error_message": r.error_message
             }
-            
+
             if not r.refused and r.guess:
                 record.update({
                     "country_guess": r.guess.country,
@@ -300,11 +353,11 @@ class GeoGuessrBenchmark:
                     "score": r.score,
                     "country_correct": r.country_correct
                 })
-                
+
             records.append(record)
-            
+
         pd.DataFrame(records).to_csv(f"{output_path}detailed.csv", index=False)
-        
+
         results_dict = self._compile_results()
         with open(f"{output_path}summary.json", "w") as f:
             json.dump({k: v for k, v in results_dict.items() if k != "detailed_results"}, f, indent=2)
@@ -317,7 +370,7 @@ def calculate_score(distance: float, scale: float) -> int:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="GeoGuessr Benchmark Tool")
-    parser.add_argument("--dataset", "-d", type=str, default="acw", 
+    parser.add_argument("--dataset", "-d", type=str, default="acw",
                         help="Dataset subfolder to use (default: 'acw')")
     parser.add_argument("--samples", "-n", type=int, default=None,
                         help="Number of samples to test (default: all)")
@@ -328,6 +381,8 @@ if __name__ == "__main__":
                         help="Maximum number of retries for API/network errors (default: 3)")
     parser.add_argument("--continue-from", type=int, default=None,
                         help="Continue from a specific sample number (1-indexed)")
+    parser.add_argument("--parallel", "-p", type=int, default=1,
+                        help="Number of parallel workers to use (default: 1)")
     args = parser.parse_args()
     
     dataset_path = f"dataset/{args.dataset}"
@@ -339,11 +394,11 @@ if __name__ == "__main__":
     )
 
     runtime = datetime.datetime.now().strftime('%Y-%m-%dT%H_%M_%S')
-    run_folder = f"responses/{benchmark.model.name}_{args.dataset}_{runtime}"
-    
+    benchmark.run_folder = f"responses/{benchmark.model.name}_{args.dataset}_{runtime}"
+
     results = benchmark.run_benchmark(args)
     
-    benchmark.save_results(run_folder + "/results/")
+    benchmark.save_results(benchmark.run_folder + "/results/")
     
     print(f"Total samples: {results['n']}")
     print(f"Country success rate: {results['country_success_rate']:.2%}")
