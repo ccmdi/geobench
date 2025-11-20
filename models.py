@@ -17,9 +17,10 @@ def get_image_media_type(image_path: str) -> str:
 
 class BaseMultimodalModel(ABC):
     """Abstract base class for multimodal models."""
-    api_key_name: str = None
-    model_identifier: str = None
-    name: str = None
+    api_key_name: str = ""
+    model_identifier: str = ""
+    name: str = ""
+    provider: str = ""
     rate_limit: int = 5
     rate_limit_period: int = 60
     max_tokens: int = 32000
@@ -52,7 +53,7 @@ class BaseMultimodalModel(ABC):
     @abstractmethod
     def _extract_response_text(self, response: requests.Response) -> str: pass
 
-    def query(self, image_path: str, prompt: str, run_folder: str = None, location_id: str = None) -> str:
+    def query(self, image_path: str, prompt: str, run_folder: str = "", location_id: str = "") -> str:
         """
         Public method to query the model.
         """
@@ -92,7 +93,7 @@ class AnthropicClient(BaseMultimodalModel):
     api_key_name = "ANTHROPIC_API_KEY"
     base_url = "https://api.anthropic.com/v1/messages"
     anthropic_version: str = "2023-06-01"
-    beta_header: str = None
+    beta_header: str = ""
     enable_thinking: bool = False
 
     def _get_endpoint(self) -> str:
@@ -147,7 +148,7 @@ class GoogleClient(BaseMultimodalModel):
     api_key_name = "GEMINI_API_KEY"
     base_url = "https://generativelanguage.googleapis.com"
     api_version_path: str = "v1" # e.g., "beta/" for experimental versions
-    tools: str = None
+    tools: List[dict] = []
 
     def _get_endpoint(self) -> str:
         action = "generateContent"
@@ -188,9 +189,9 @@ class OpenAIClient(BaseMultimodalModel):
     api_key_name = "OPENAI_API_KEY"
     base_url = "https://api.openai.com/v1/responses"
 
-    reasoning_effort: str = None
-    detail: str = None
-    tools: List = None
+    reasoning_effort: str = ""
+    detail: str = ""
+    tools: List[dict] = []
 
     def _get_endpoint(self) -> str:
         return self.base_url
@@ -222,8 +223,8 @@ class OpenAIClient(BaseMultimodalModel):
         if hasattr(self, 'temperature') and self.temperature >= 0:
              payload["temperature"] = self.temperature
 
-        if hasattr(self, 'max_output_tokens') and self.max_output_tokens > 0:
-             payload["max_output_tokens"] = self.max_output_tokens
+        if hasattr(self, 'max_tokens') and self.max_tokens > 0:
+             payload["max_tokens"] = self.max_tokens
 
         if self.reasoning_effort:
              payload["reasoning"] = {"effort": self.reasoning_effort}
@@ -384,6 +385,11 @@ class Gemini2_5Flash_0520(GoogleClient):
     name = "Gemini 2.5 Flash Preview (05-20)"
     model_identifier = "gemini-2.5-flash-preview-05-20"
     rate_limit = 6
+    api_version_path = "v1beta"
+class Gemini3_0ProPreview(GoogleClient):
+    name = "Gemini 3.0 Pro Preview"
+    model_identifier = "gemini-3-pro-preview"
+    rate_limit = 4
     api_version_path = "v1beta"
 
 
