@@ -1,10 +1,42 @@
+# Python
 __pycache__/
-.env
+*.py[cod]
+*$py.class
+*.so
+.Python
 
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+.env.local
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Project-specific data
 dataset/*
 responses/*
+internal/*
 
+# Visualizations output
 visualizations/*.csv
 visualizations/*/*.html
 
 scripts/private/*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
