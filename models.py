@@ -344,7 +344,21 @@ class Claude4_5SonnetThinking(AnthropicClient):
     enable_thinking = True
     beta_header = "output-128k-2025-02-19"
     temperature = 0.4
-
+class Claude4_5OpusThinking(AnthropicClient):
+    name = "Claude 4.5 Opus (Thinking)"
+    model_identifier = "claude-opus-4-5"
+    rate_limit = 2
+    enable_thinking = True
+    beta_header = "output-128k-2025-02-19"
+    temperature = 0.4
+class Claude4_6OpusThinking(AnthropicClient):
+    name = "Claude 4.6 Opus (Thinking)"
+    model_identifier = "claude-opus-4-6"
+    rate_limit = 4
+    enable_thinking = True
+    beta_header = "output-128k-2025-02-19"
+    temperature = 0.4
+    reasoning_effort = "high"
 
 # Google Models
 class Gemini1_5Flash(GoogleClient):
@@ -391,7 +405,21 @@ class Gemini3_0ProPreview(GoogleClient):
     model_identifier = "gemini-3-pro-preview"
     rate_limit = 4
     api_version_path = "v1beta"
-
+class Gemini3_0FlashPreview(GoogleClient):
+    name = "Gemini 3.0 Flash Preview"
+    model_identifier = "gemini-3-flash-preview"
+    rate_limit = 4
+    api_version_path = "v1beta"
+class Gemini3_1ProPreview(GoogleClient):
+    name = "Gemini 3.1 Pro Preview"
+    model_identifier = "gemini-3.1-pro-preview"
+    rate_limit = 4
+    api_version_path = "v1beta"
+class Gemini3_1FlashLitePreview(GoogleClient):
+    name = "Gemini 3.1 Flash Lite Preview"
+    model_identifier = "gemini-3.1-flash-lite-preview"
+    rate_limit = 8
+    api_version_path = "v1beta"
 
 # OpenAI Models
 class GPT4oMini(OpenAIClient):
@@ -458,6 +486,17 @@ class GPT5(OpenAIClient):
     max_tokens = -1
     temperature = -1
 
+class GPT5_4_high(OpenAIClient):
+    provider = "OpenAI"
+    name = "GPT-5.4 (High)"
+    model_identifier = "gpt-5.4"
+    rate_limit = 4
+    reasoning_effort = "high"
+
+    max_tokens = -1
+    temperature = -1
+
+
 # OpenRouter Models
 class Qwen2_5_VL_72b(OpenRouterClient):
     provider = "Alibaba"
@@ -481,13 +520,13 @@ class Phi4Instruct(OpenRouterClient):
     name = "Phi 4 Instruct"
     model_identifier = "microsoft/phi-4-multimodal-instruct"
 class Grok4(OpenRouterClient):
-    provider = "OpenAI"
+    provider = "xAI"
     name = "Grok 4"
     model_identifier = "x-ai/grok-4"
     rate_limit = 2
 
-# class HorizonBeta(OpenRouterClient):
-#     provider = "OpenAI"
-#     name = "Horizon Beta"
-#     model_identifier = "openrouter/horizon-beta"
-#     rate_limit = 2
+# class KimiK2_5(OpenRouterClient):
+#     provder = "Moonshot AI"
+#     name = "Kimi K2"
+#     model_identifier = "moonshotai/kimi-k2.5"
+#     rate_limit = 4
