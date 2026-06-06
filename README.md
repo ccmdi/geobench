@@ -3,7 +3,7 @@ GeoBench is a benchmark for evaluating how well large language models can geoloc
 # **[Leaderboard](https://geobench.org)**
 
 ![](img/leaderboard.png)
-For an in-depth explanation of the results, covering things like model behavior and reasoning, see my [writeup](https://ccmdi.github.io/blog/GeoBench).
+For an in-depth explanation of the results, covering things like model behavior and reasoning, see my [writeup](https://ccmdi.com/blog/GeoBench).
 
 # Installation
 ```
