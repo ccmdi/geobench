@@ -95,6 +95,8 @@ class AnthropicClient(BaseMultimodalModel):
     anthropic_version: str = "2023-06-01"
     beta_header: str = ""
     enable_thinking: bool = False
+    thinking_adaptive: bool = False
+    effort: str = "high"
 
     def _get_endpoint(self) -> str:
         return self.base_url
@@ -121,7 +123,11 @@ class AnthropicClient(BaseMultimodalModel):
             ]}]
         }
         if self.enable_thinking:
-            payload["thinking"] = {"type": "enabled", "budget_tokens": self.max_tokens - 512}
+            if self.thinking_adaptive:
+                payload["thinking"] = {"type": "adaptive"}
+                payload["output_config"] = {"effort": self.effort}
+            else:
+                payload["thinking"] = {"type": "enabled", "budget_tokens": self.max_tokens - 512}
             if "temperature" in payload:
                 del payload["temperature"]
         return payload
@@ -359,7 +365,38 @@ class Claude4_6OpusThinking(AnthropicClient):
     beta_header = "output-128k-2025-02-19"
     temperature = 0.4
     reasoning_effort = "high"
-
+class Claude4_8OpusThinking(AnthropicClient):
+    name = "Claude 4.8 Opus (Thinking)"
+    model_identifier = "claude-opus-4-8"
+    rate_limit = 4
+    enable_thinking = True
+    thinking_adaptive = True
+    effort = "high"
+    beta_header = "output-128k-2025-02-19"
+    temperature = 0.4
+class Claude4_6SonnetThinking(AnthropicClient):
+    name = "Claude 4.6 Sonnet (Thinking)"
+    model_identifier = "claude-sonnet-4-6"
+    rate_limit = 4
+    enable_thinking = True
+    beta_header = "output-128k-2025-02-19"
+    temperature = 0.4
+class ClaudeSonnet5(AnthropicClient):
+    name = "Claude Sonnet 5"
+    model_identifier = "claude-sonnet-5"
+    rate_limit = 4
+    enable_thinking = True
+    thinking_adaptive = True
+    effort = "high"
+    temperature = 0.4
+class ClaudeFable5(AnthropicClient):
+    name = "Claude Fable 5"
+    model_identifier = "claude-fable-5"
+    rate_limit = 4
+    enable_thinking = True
+    thinking_adaptive = True
+    effort = "high"
+    temperature = 0.4
 # Google Models
 class Gemini1_5Flash(GoogleClient):
     name = "Gemini 1.5 Flash"
@@ -420,7 +457,11 @@ class Gemini3_1FlashLitePreview(GoogleClient):
     model_identifier = "gemini-3.1-flash-lite-preview"
     rate_limit = 8
     api_version_path = "v1beta"
-
+class Gemini3_5Flash(GoogleClient):
+    name = "Gemini 3.5 Flash"
+    model_identifier = "gemini-3.5-flash"
+    rate_limit = 6
+    api_version_path = "v1beta"
 # OpenAI Models
 class GPT4oMini(OpenAIClient):
     name = "GPT-4o Mini"
@@ -495,8 +536,6 @@ class GPT5_4_high(OpenAIClient):
 
     max_tokens = -1
     temperature = -1
-
-
 # OpenRouter Models
 class Qwen2_5_VL_72b(OpenRouterClient):
     provider = "Alibaba"
@@ -524,9 +563,28 @@ class Grok4(OpenRouterClient):
     name = "Grok 4"
     model_identifier = "x-ai/grok-4"
     rate_limit = 2
-
-# class KimiK2_5(OpenRouterClient):
-#     provder = "Moonshot AI"
-#     name = "Kimi K2"
-#     model_identifier = "moonshotai/kimi-k2.5"
-#     rate_limit = 4
+class Grok4_3(OpenRouterClient):
+    provider = "xAI"
+    name = "Grok 4.3"
+    model_identifier = "x-ai/grok-4.3"
+    rate_limit = 2
+class MistralMedium3_5(OpenRouterClient):
+    provider = "Mistral"
+    name = "Mistral Medium 3.5"
+    model_identifier = "mistralai/mistral-medium-3-5"
+    rate_limit = 4
+class KimiK2_5(OpenRouterClient):
+    provider = "Moonshot AI"
+    name = "Kimi K2.5"
+    model_identifier = "moonshotai/kimi-k2.5"
+    rate_limit = 4
+class Qwen3VL235B(OpenRouterClient):
+    provider = "Alibaba"
+    name = "Qwen3-VL-235B"
+    model_identifier = "qwen/qwen3-vl-235b-a22b-instruct"
+    rate_limit = 4
+class GLM4_6V(OpenRouterClient):
+    provider = "Zhipu"
+    name = "GLM-4.6V"
+    model_identifier = "z-ai/glm-4.6v"
+    rate_limit = 4
