@@ -397,6 +397,23 @@ class ClaudeFable5(AnthropicClient):
     thinking_adaptive = True
     effort = "high"
     temperature = 0.4
+class ClaudeOpus5(AnthropicClient):
+    name = "Claude Opus 5"
+    model_identifier = "claude-opus-5"
+    rate_limit = 4
+    enable_thinking = True
+    thinking_adaptive = True
+    effort = "high"
+    temperature = 0.4
+class ClaudeFable5_1(AnthropicClient):
+    name = "Claude Fable 5.1"
+    model_identifier = "claude-fable-5-1"
+    rate_limit = 4
+    enable_thinking = True
+    thinking_adaptive = True
+    effort = "high"
+    temperature = 0.4
+
 # Google Models
 class Gemini1_5Flash(GoogleClient):
     name = "Gemini 1.5 Flash"
@@ -462,6 +479,17 @@ class Gemini3_5Flash(GoogleClient):
     model_identifier = "gemini-3.5-flash"
     rate_limit = 6
     api_version_path = "v1beta"
+class Gemini3_7Flash(GoogleClient):
+    name = "Gemini 3.7 Flash"
+    model_identifier = "gemini-3.7-flash"
+    rate_limit = 6
+    api_version_path = "v1beta"
+class Gemini3_8Flash(GoogleClient):
+    name = "Gemini 3.8 Flash"
+    model_identifier = "gemini-3.8-flash"
+    rate_limit = 6
+    api_version_path = "v1beta"
+
 # OpenAI Models
 class GPT4oMini(OpenAIClient):
     name = "GPT-4o Mini"
@@ -536,6 +564,44 @@ class GPT5_4_high(OpenAIClient):
 
     max_tokens = -1
     temperature = -1
+class GPT5_6Luna_high(OpenAIClient):
+    provider = "OpenAI"
+    name = "GPT-5.6 Luna (High)"
+    model_identifier = "gpt-5.6-luna"
+    rate_limit = 4
+    reasoning_effort = "high"
+
+    max_tokens = -1
+    temperature = -1
+class GPT5_6Terra_high(OpenAIClient):
+    provider = "OpenAI"
+    name = "GPT-5.6 Terra (High)"
+    model_identifier = "gpt-5.6-terra"
+    rate_limit = 4
+    reasoning_effort = "high"
+
+    max_tokens = -1
+    temperature = -1
+class GPT5_6Sol_high(OpenAIClient):
+    provider = "OpenAI"
+    name = "GPT-5.6 Sol (High)"
+    model_identifier = "gpt-5.6-sol"
+    rate_limit = 4
+    reasoning_effort = "high"
+
+    max_tokens = -1
+    temperature = -1
+class GPT6Astra_high(OpenAIClient):
+    provider = "OpenAI"
+    name = "GPT-6 Astra (High)"
+    model_identifier = "gpt-6-astra"
+    rate_limit = 4
+    reasoning_effort = "high"
+
+    max_tokens = -1
+    temperature = -1
+
+
 # OpenRouter Models
 class Qwen2_5_VL_72b(OpenRouterClient):
     provider = "Alibaba"
@@ -546,6 +612,11 @@ class Llama4Maverick(OpenRouterClient):
     provider = "Meta"
     name = "Llama 4 Maverick"
     model_identifier = "meta-llama/llama-4-maverick"
+class MuseSpark1_3(OpenRouterClient):
+    provider = "Meta"
+    name = "Muse Spark 1.3"
+    model_identifier = "meta/muse-spark-1.3"
+    rate_limit = 4
 class Pixtral_12b(OpenRouterClient): 
     provider = "Mistral"
     model_identifier = "mistralai/pixtral-12b"
@@ -568,6 +639,16 @@ class Grok4_3(OpenRouterClient):
     name = "Grok 4.3"
     model_identifier = "x-ai/grok-4.3"
     rate_limit = 2
+class Grok4_6(OpenRouterClient):
+    provider = "xAI"
+    name = "Grok 4.6"
+    model_identifier = "x-ai/grok-4.6"
+    rate_limit = 2
+class Grok4_7(OpenRouterClient):
+    provider = "xAI"
+    name = "Grok 4.7"
+    model_identifier = "x-ai/grok-4.7"
+    rate_limit = 2
 class MistralMedium3_5(OpenRouterClient):
     provider = "Mistral"
     name = "Mistral Medium 3.5"
@@ -578,10 +659,20 @@ class KimiK2_5(OpenRouterClient):
     name = "Kimi K2.5"
     model_identifier = "moonshotai/kimi-k2.5"
     rate_limit = 4
+class KimiK3(OpenRouterClient):
+    provider = "Moonshot AI"
+    name = "Kimi K3"
+    model_identifier = "moonshotai/kimi-k3"
+    rate_limit = 4
 class Qwen3VL235B(OpenRouterClient):
     provider = "Alibaba"
     name = "Qwen3-VL-235B"
     model_identifier = "qwen/qwen3-vl-235b-a22b-instruct"
+    rate_limit = 4
+class Qwen3_8_27B(OpenRouterClient):
+    provider = "Alibaba"
+    name = "Qwen3.8-27B"
+    model_identifier = "qwen/qwen3.8-27b"
     rate_limit = 4
 class GLM4_6V(OpenRouterClient):
     provider = "Zhipu"
