@@ -1,0 +1,21 @@
+[project]
+name = "shungite"
+version = "0.1.0"
+description = "I bought a whole bunch of shungite rocks, do you know what shungite is? Anybody know what shungite is? No, not Suge Knight, I think he's locked up in prison. I'm talkin' shungite."
+authors = [
+    { name = "ccmdi", email = "ccmdi.dev@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "haversine>=2.9.0",
+    "pydantic>=2.14.3",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
