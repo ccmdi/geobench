@@ -1,0 +1,3 @@
+[client]
+base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
+api_key_var = "GEMINI_API_KEY"

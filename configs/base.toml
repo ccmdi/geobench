@@ -1,0 +1,15 @@
+[env.taskset]
+id = "geobench"
+
+[env.agent]
+max_turns = 1
+
+[env.agent.harness]
+id = "null"
+
+[env.agent.runtime]
+type = "subprocess"
+
+[sampling]
+temperature = 0.4
+max_tokens = 32000
