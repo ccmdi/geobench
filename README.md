@@ -24,6 +24,17 @@ Profiles: `openai`, `anthropic`, `gemini`, `xai`, `openrouter`. `<map>` is a fol
 
 Each location scores 0 to 5000 points on the GeoGuessr curve, scaled to the map's size. The reward is points / 5000, and `country_correct` tracks whether the country was right.
 
+## Trials and results
+Run every location K times with `-r K`. Each trial is its own fresh episode:
+```bash
+uv run --env-file .env vf-run @ configs/base.toml @ configs/openai.toml -m <model> -r 3
+```
+Then build the report from one or more run folders. It only reads the saved traces, so no model gets called:
+```bash
+uv run python -m shungite.report outputs/<run> [outputs/<run> ...]
+```
+You get Markdown tables: per model, the pass rate, pass^k, pass@k, mean score (points / 5000) with its spread across trials, tokens and wall time, then every location's score in each trial. `--price-in` / `--price-out` (USD per 1M tokens) turn the tokens into a cost, and `--json` prints the numbers as JSON. A location passes when the country is right.
+
 ## Create a dataset
 ```bash
 uv run --extra build python dataset.py --num <n> --output <map> --map <geoguessr map id>

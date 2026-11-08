@@ -1,11 +1,11 @@
 import json
 from collections.abc import Iterator
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 import verifiers.v1 as vf
 
 from geobench.prompt import user_message
-from geobench.round import MAX_POINTS, Round
+from geobench.round import Round
 from shungite import Bounds
 
 
@@ -20,9 +20,9 @@ class GeoTask(vf.Task[RoundData, vf.State, vf.TaskConfig]):
 
     @vf.reward
     async def geoguessr(self, trace: vf.Trace) -> float:
-        grade = self.data.round.grade(trace.last_reply)
-        trace.info["verdict"] = grade.verdict
-        return grade.points / MAX_POINTS
+        item = self.data.round.grade(trace.last_reply).item
+        trace.info["items"] = {self.data.round.id: item.model_dump()}
+        return item.score
 
 
 class GeoTasksetConfig(vf.TasksetConfig):
@@ -40,12 +40,12 @@ class GeoTaskset(vf.Taskset[GeoTask, GeoTasksetConfig]):
         metadata = json.loads((self.config.map_dir / "metadata.json").read_text())
         bounds = Bounds.model_validate(metadata["bounds"])
         for raw in metadata["images"]:
-            image = PurePosixPath(raw["image_path"])
+            round = Round.parse(raw, bounds)
             yield GeoTask(
                 RoundData(
-                    id=f"{self.config.map}/{image.stem}",
-                    prompt=[user_message(self.config.map_dir / image)],
-                    round=Round.parse(raw, bounds),
+                    id=f"{self.config.map}/{round.id}",
+                    prompt=[user_message(self.config.map_dir / raw["image_path"])],
+                    round=round,
                 ),
                 self.config.task,
             )

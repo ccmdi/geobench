@@ -24,12 +24,16 @@ async def test_the_reference_scores_full_points(tasks: dict[str, GeoTask]) -> No
     trace = await scored(task, final("United States", location))
     assert trace.reward == 1.0
     assert trace.metrics == {"score": 5000.0, "country_correct": 1.0, "answered": 1.0, "distance_km": 0.0}
-    assert trace.info["verdict"] == {
-        "guess": {"country": "United States", "coordinates": location.model_dump()},
-        "score": 5000.0,
-        "country_correct": 1.0,
-        "answered": 1.0,
-        "distance_km": 0.0,
+    assert trace.info["items"] == {
+        "1": {
+            "score": 1.0,
+            "passed": True,
+            "kind": None,
+            "guess": {"country": "United States", "coordinates": location.model_dump()},
+            "refused": False,
+            "points": 5000.0,
+            "distance_km": 0.0,
+        }
     }
 
 
@@ -46,13 +50,22 @@ async def test_an_unanswered_reply_scores_zero(tasks: dict[str, GeoTask]) -> Non
     trace = await scored(task, "I cannot tell where this is.")
     assert trace.reward == 0.0
     assert trace.metrics == {"score": 0.0, "country_correct": 0.0, "answered": 0.0}
-    assert trace.info["verdict"]["guess"] is None
+    assert trace.info["items"]["1"] == {"score": 0.0, "passed": False, "kind": None, "guess": None, "refused": True}
 
 
 async def test_an_empty_reply_scores_zero(tasks: dict[str, GeoTask]) -> None:
     trace = await scored(tasks[f"{MAP}/1"], "")
     assert trace.reward == 0.0
     assert trace.metrics["answered"] == 0.0
+
+
+async def test_a_round_passes_on_the_right_country_whatever_the_distance(tasks: dict[str, GeoTask]) -> None:
+    task = tasks[f"{MAP}/2"]
+    near = await scored(task, final("Tanzania", task.data.round.location))
+    far = await scored(task, final("Kenya", offset(task.data.round.location, 3000.0)))
+    assert (near.info["items"]["2"]["score"], near.info["items"]["2"]["passed"]) == (1.0, False)
+    assert far.info["items"]["2"]["passed"] is True
+    assert far.info["items"]["2"]["score"] < 0.5
 
 
 @pytest.mark.parametrize(
