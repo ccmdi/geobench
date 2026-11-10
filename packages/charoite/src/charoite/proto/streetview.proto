@@ -1,0 +1,201 @@
+// Messages shared by the MapsJsInternalService RPCs (GetMetadata, SingleImageSearch).
+// Field numbers verified against live traffic and the Maps JS API's own encoder.
+// Both wire encodings share these numbers, with array-JSON holding field i at index i-1.
+syntax = "proto2";
+
+// Which imagery collection a pano id belongs to.
+enum PanoType {
+  // Official Street View coverage.
+  OFFICIAL = 2; // label: Official
+  // Unofficial imagery from outside the user-uploaded collection.
+  UNKNOWN = 3; // label: Unknown
+  // Imagery uploaded by users.
+  USER_UPLOADED = 10; // label: User uploaded
+}
+
+// GetMetadata sets only client and language; SingleImageSearch fills more of it.
+message RequestContext {
+  optional string client = 1; // "apiv3"
+  optional int32 source = 2;
+  // The session id the Maps JS API sends. We never do, so every answer is the cold,
+  // session-free one.
+  optional int64 clientId = 3;
+  optional int32 cacheBehavior = 4;
+  optional string language = 5;
+  optional int32 gpsDebugLevel = 6;
+  optional int32 httpResponseFormat = 7;
+  optional bool inlineExtraDataSpec = 8;
+  optional string queryOrigin = 9;
+  optional SuperrootParams superrootParams = 10;
+  optional ProductSpecialCaseOptions productSpecialCaseOptions = 11;
+  optional ExperimentalOptions experimentalOptions = 12;
+}
+
+message SuperrootParams {} // contents unverified
+
+message ProductSpecialCaseOptions {
+  optional StreetViewSpecialCase streetView = 1; // name inferred
+}
+
+message StreetViewSpecialCase { // name inferred
+  optional bool flag = 1; // name inferred; the Maps JS API gates it on an internal experiment
+}
+
+message ExperimentalOptions {} // contents unverified
+
+message LocalizationContext {
+  optional string language = 1;
+  optional string regionCode = 2;
+}
+
+// GetMetadata answers only code; a SingleImageSearch miss comes back as
+// [[5, "generic", "Search returned no images."]]. code: 0 OK, 3 and 5 no coverage.
+message ResponseStatus {
+  optional int32 code = 1;
+  optional string errorCode = 2;
+  optional string errorMessage = 3;
+}
+
+message ImageMetadata {
+  optional ImageStatus status = 1;
+  optional ImageKey pano = 2;
+  optional ImageTiles tiles = 3;
+  optional ImageDescription description = 4;
+  optional ImageAttribution attribution = 5;
+  repeated ImageInformation information = 6;
+  optional ImageDate date = 7;
+  optional LocalizedText legal = 8;
+}
+
+message ImageStatus {
+  optional int32 code = 1; // 1 and 3 usable, 2 = ZERO_RESULTS
+}
+
+message ImageKey {
+  optional int32 frontend = 1; // PanoType
+  optional string id = 2;
+}
+
+message ImageSize {
+  optional int32 height = 1;
+  optional int32 width = 2;
+}
+
+message ImageTiles {
+  optional ImageSize worldSize = 3;
+  optional ImageTileSize tileSize = 4;
+  optional string panoId = 10;
+}
+
+message ImageTileSize {
+  repeated PossibleSize possible = 1;
+  optional ImageSize tileSize = 2;
+}
+
+message PossibleSize {
+  optional ImageSize size = 1;
+}
+
+message LocalizedText {
+  optional string text = 1;
+  optional string language = 2;
+}
+
+message ImageDescription {
+  repeated LocalizedText description = 3;
+}
+
+message ImageTitle {
+  optional string name = 1;
+}
+
+message AttributionItem {
+  optional ImageTitle name = 1;
+  optional string url = 2;
+}
+
+message ImageAuthor {
+  optional LocalizedText name = 1;
+  optional string profileUrl = 2;
+}
+
+message ImageAttribution {
+  repeated AttributionItem item = 1;
+  repeated ImageAuthor author = 2;
+}
+
+message LatLng {
+  optional double lat = 3;
+  optional double lng = 4;
+}
+
+message Altitude {
+  optional float meters = 1;
+}
+
+message Pov {
+  optional float heading = 1;
+  optional float tilt = 2;
+  optional float roll = 3;
+}
+
+message Level {
+  optional uint64 id = 1;
+  optional int32 ordinal = 2;
+  optional LocalizedText name = 3;
+  optional LocalizedText abbreviation = 4;
+}
+
+message PanoLocation {
+  optional LatLng location = 1;
+  optional Altitude altitude = 2;
+  optional Pov pov = 3; // heading = driving direction on car coverage
+  optional Level level = 4;
+  optional string countryCode = 5;
+}
+
+message Pano {
+  optional ImageKey key = 1;
+  optional PanoLocation location = 3;
+}
+
+message PanoRelations {
+  repeated Pano pano = 1;
+}
+
+message PanoLinkProperties {
+  optional float heading = 4;
+}
+
+message PanoLink {
+  optional int32 target = 1; // index into relations
+  optional PanoLinkProperties properties = 2;
+}
+
+message PanoDate {
+  optional int32 year = 1;
+  optional int32 month = 2;
+  optional int32 day = 3;
+}
+
+message PanoTime {
+  optional int32 target = 1; // index into relations
+  optional PanoDate date = 2;
+}
+
+message ImageInformation {
+  optional ImageStatus status = 1;
+  optional PanoLocation location = 2;
+  optional PanoRelations relations = 4;
+  repeated PanoLink link = 7;
+  repeated PanoTime time = 9;
+}
+
+message DateSourceInfo {
+  optional string source = 3; // "launch" = car, "scout" = trekker/alleycat
+}
+
+message ImageDate {
+  optional DateSourceInfo sourceInfo = 6;
+  optional PanoDate date = 8;
+}

@@ -1,0 +1,26 @@
+// GetMetadata schema for google.internal.maps.mapsjs.v1.MapsJsInternalService.
+// Field numbers verified against live responses (binary request/response, content-type
+// application/x-protobuf). Shared messages live in streetview.proto.
+syntax = "proto2";
+
+message GetMetadataRequest {
+  optional RequestContext context = 1;
+  optional LocalizationContext locale = 2; // SingleImageSearch carries this inside queryOptions instead
+  repeated KeyWrapper key = 3;
+  optional MetadataResponseSpecification spec = 4;
+}
+
+message KeyWrapper {
+  optional ImageKey key = 1;
+}
+
+message MetadataResponseSpecification {
+  // Component N includes ImageMetadata field N in the answer (2 pano, 3 tiles,
+  // 4 description, 6 information; 1 status and 8 are always-on).
+  repeated int32 component = 1;
+}
+
+message GetMetadataResponse {
+  optional ResponseStatus status = 1;
+  repeated ImageMetadata metadata = 2;
+}

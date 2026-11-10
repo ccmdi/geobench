@@ -1,0 +1,142 @@
+// SingleImageSearch schema for google.internal.maps.mapsjs.v1.MapsJsInternalService.
+// Field numbers verified against the Maps JS API's own encoder and live responses
+// (array-JSON, content-type application/json+protobuf; the binary form carries the same
+// numbers). "name inferred" marks a name this schema coins itself. Shared messages live
+// in streetview.proto.
+syntax = "proto2";
+
+message SingleImageSearchRequest {
+  optional RequestContext context = 1;
+  optional Circle location = 2; // the point + radius to search
+  optional QueryOptions queryOptions = 3;
+  optional ResponseSpecification responseSpecification = 4;
+  optional ImageKey imageKey = 5; // search anchored on a pano instead of a point
+  optional SearchFeature feature = 8;
+}
+
+// The search area. Radius is in metres, clamped by the Maps JS API to
+// [0, 6378137 * PI] (half the Earth's circumference); its own default is 50.
+message Circle {
+  optional LatLng center = 1;
+  optional double radius = 2;
+  optional Level level = 3;
+  optional LatLng lookAtPoint = 5;
+  optional string tag = 6;
+}
+
+message QueryOptions {
+  optional FilterOptions filterOptions = 1;
+  optional LocalizationContext localizationContext = 2;
+  optional RankingOptions rankingOptions = 9;
+  optional ClientCapabilities clientCapabilities = 11;
+}
+
+message FilterOptions {
+  optional FormatRestrictions formatRestrictions = 1;
+  optional bool restrictToAdsEligible = 2;
+  // The Maps JS API sets this for StreetViewSource.OUTDOOR.
+  optional bool restrictToDirectionsAppropriate = 3;
+  optional bool restrictToUnknown4 = 4; // name inferred
+  optional bool restrictToPhotosWithFocusAttribution = 5;
+  optional bool restrictToSyndicationEligible = 6;
+  optional SemanticRestrictions semanticRestrictions = 7;
+  optional bool restrictToOwnerAttributedPhotos = 8;
+  // No schema source knows this field; verified only by our pinned bodies and live
+  // hit/miss captures. A search carrying it answers only when the window contains the
+  // DEFAULT pano's capture timestamp at that point; other months in the coverage history
+  // return "no images".
+  optional CaptureTimeRange captureTimeRange = 11; // name inferred
+}
+
+message CaptureTimeRange { // name inferred
+  optional int64 start = 1; // name inferred; exclusive, Unix seconds
+  optional int64 end = 2; // name inferred; inclusive, Unix seconds
+}
+
+message FormatRestrictions {
+  optional int32 imageFormat = 3;
+}
+
+message SemanticRestrictions {} // contents unverified
+
+// Which pano the search picks; omitted means closest. BEST at a small radius can return a
+// neighbouring pano from the same capture run, so probe a pano's own coordinate with CLOSEST.
+enum RankingStrategy {
+  // The pano the search ranks best within the radius, which may not be the nearest.
+  BEST = 1;
+  // The pano nearest the searched point, and the choice when none is given.
+  CLOSEST = 2;
+}
+
+message RankingOptions {
+  optional int32 rankingStrategy = 1; // RankingStrategy
+  optional double logisticCurvature = 2;
+  optional double logisticOffset = 3;
+  optional double distanceRatio = 4;
+  // Not where our capture window goes; that is FilterOptions field 11.
+  optional TimestampOptions timestampOptions = 5;
+  optional RankingUnknown6 qbica = 6; // name as the schema spells it; meaning unverified
+  optional string descriptor = 7;
+  optional SimilarityOptions similarityOptions = 8;
+}
+
+message TimestampOptions {} // contents unverified
+message RankingUnknown6 {} // contents unverified
+message SimilarityOptions {} // contents unverified
+
+message ClientCapabilities {
+  repeated RenderStrategy supportedRenderStrategy = 1;
+  optional ImageSize maxDimension = 2;
+}
+
+// One imagery collection the client will accept. The Maps JS API sends
+// {frontend, tiled: true, imageFormat: 2} for each of frontends 2, 3 and 10 by default,
+// and only frontend 2 for sources: ["google"].
+message RenderStrategy {
+  optional int32 frontend = 1; // PanoType
+  optional bool tiled = 2;
+  optional int32 imageFormat = 3; // the Maps JS API always sends 2
+}
+
+message ResponseSpecification {
+  // Same component values as MetadataResponseSpecification; the Maps JS API asks for
+  // [1, 2, 3, 4, 8, 6], a bare coverage probe needs only [2, 6].
+  repeated int32 components = 1;
+  repeated NavigationChannel navigationChannels = 2;
+  optional int32 httpResponseFormat = 3;
+  optional AttributionSpec attribution = 4;
+  repeated CursorFormat cursorFormats = 5;
+  repeated TargetOverlayFormat targetOverlayFormats = 6;
+  optional bool unknown7 = 7; // name inferred
+  optional ClientCapabilities clientCapabilities = 9;
+  // The Maps JS API's photo-gallery path sends an ImageSize of 75 x 96 here, along with
+  // component 17.
+  optional ThumbnailSpec thumbnail = 11; // name inferred
+}
+
+message NavigationChannel {} // contents unverified
+
+message AttributionSpec {
+  optional int32 thumbnailSize = 1;
+}
+
+message CursorFormat {
+  optional int32 encoding = 1;
+}
+
+message TargetOverlayFormat {} // contents unverified
+
+message ThumbnailSpec { // name inferred
+  repeated ThumbnailEntry entry = 3; // name inferred
+}
+
+message ThumbnailEntry { // name inferred
+  optional ImageSize size = 1;
+}
+
+message SearchFeature {} // contents unverified
+
+message SingleImageSearchResponse {
+  optional ResponseStatus status = 1;
+  optional ImageMetadata result = 2;
+}

@@ -1,0 +1,28 @@
+[project]
+name = "charoite"
+version = "0.1.0"
+description = "Google Street View panoramas: search, lookup, stitching and flat views"
+authors = [
+    { name = "ccmdi", email = "ccmdi.dev@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28",
+    "pillow>=11",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.2",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = ["live: touches real Street View servers (deselected by default)"]
+addopts = "-m 'not live'"
