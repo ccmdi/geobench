@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoBench Visualization</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+
+        #container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        #header {
+            padding: 12px;
+            background-color: #1e1e1e;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        #filters {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        select {
+            padding: 6px 8px;
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #555;
+            box-shadow: 0 0 0 2px rgba(100, 100, 255, 0.2);
+        }
+
+        #location-selector, #dataset-filter {
+            min-width: 200px;
+        }
+
+        #map {
+            flex-grow: 1;
+            position: relative;
+        }
+
+        #navigation {
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            background-color: #1e1e1e;
+            border-top: 1px solid #333;
+        }
+
+        .nav-button {
+            padding: 6px 16px;
+            margin: 0 10px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #2a2a2a;
+            color: #e0e0e0;
+            border: 1px solid #444;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-button:hover {
+            background-color: #3a3a3a;
+        }
+
+        .nav-button:active {
+            background-color: #444;
+            transform: translateY(1px);
+        }
+
+        #location-counter {
+            color: #bbb;
+            display: inline-flex;
+            align-items: center;
+            padding: 0 15px;
+        }
+
+        #info-panel {
+            padding: 12px;
+            background-color: #1e1e1e;
+            border-top: 1px solid #333;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .correct {
+            color: #4caf50;
+            font-weight: bold;
+        }
+
+        .incorrect {
+            color: #f44336;
+        }
+
+        #legend {
+            position: absolute;
+            bottom: 20px;
+            right: 10px;
+            background-color: rgba(30, 30, 30, 0.9);
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            z-index: 1000;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .legend-item {
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .company-section {
+            margin-top: 12px;
+            border-top: 1px solid #333;
+            padding-top: 8px;
+        }
+
+        .company-header {
+            font-weight: bold;
+            margin: 5px 0;
+            color: #bbb;
+        }
+
+        .color-box {
+            width: 15px;
+            height: 15px;
+            margin-right: 8px;
+            display: inline-block;
+            border: 1px solid #444;
+            border-radius: 3px;
+        }
+
+        .model-details {
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #333;
+        }
+
+        .model-header {
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            color: #bbb;
+        }
+
+        .model-color {
+            width: 10px;
+            height: 10px;
+            display: inline-block;
+            margin-right: 8px;
+            border: 1px solid #555;
+            border-radius: 2px;
+        }
+
+        .stats-summary {
+            margin-left: auto;
+            font-size: 0.9em;
+            color: #888;
+        }
+
+        #no-data-message {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #888;
+            display: none;
+        }
+
+        #location-info {
+            font-size: 14px;
+            color: #bbb;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #222;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #444;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Improve popup contrast for map */
+        .leaflet-popup-content-wrapper {
+            background-color: #222;
+            color: #e0e0e0;
+        }
+
+        .leaflet-popup-tip {
+            background-color: #222;
+        }    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="header">
+            <div id="filters">
+                <div class="filter-group">
+                    <label for="dataset-filter">Test Dataset: </label>
+                    <select id="dataset-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="location-selector">Location: </label>
+                    <select id="location-selector"></select>
+                </div>
+            </div>
+            <div id="location-info"></div>
+        </div>
+        <div id="map">
+            <div id="legend"></div>
+        </div>
+        <div id="no-data-message">
+            No data available for the selected dataset. Please choose a different dataset.
+        </div>
+        <div id="navigation">
+            <button class="nav-button" id="prev-button">← Previous</button>
+            <span id="location-counter"></span>
+            <button class="nav-button" id="next-button">Next →</button>
+        </div>
+        <div id="info-panel">
+            <div id="model-comparisons"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const answers = __ANSWERS__;
+        const COLORS = {Anthropic: "#FF7F50", Google: "#4285F4", OpenAI: "#858585", Meta: "#add4ed", Mistral: "#FFDE59", Alibaba: "#ffd796"};
+        const ARROWS = {ArrowLeft: -1, ArrowRight: 1};
+        const company = a => a.provider ?? "Other";
+        const color = a => COLORS[a.provider] ?? "#A020F0";
+        const $ = id => document.getElementById(id);
+
+        const locations = new Map();
+        answers.forEach(a => locations.set(a.task, [...(locations.get(a.task) ?? []), a]));
+        const datasets = [...new Set(answers.map(a => a.map))].sort();
+
+        const map = L.map('map', {attributionControl: false}).setView([0, 0], 2);
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {maxZoom: 16, attribution: 'Tiles &copy; Esri'}).addTo(map);
+        const layer = L.layerGroup().addTo(map);
+        const TRUE_ICON = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        let dataset = 'all';
+        let keys = [];
+        let index = 0;
+        const shown = key => locations.get(key).filter(a => dataset === 'all' || a.map === dataset);
+        const swatch = (cls, a) => `<span class="${cls}" style="background-color: ${a ? color(a) : 'green'};"></span>`;
+
+        function legend() {
+            const companies = {};
+            answers.forEach(a => (companies[company(a)] ??= new Map()).set(a.model, a));
+            $('legend').innerHTML = '<h4 style="margin-top: 0; margin-bottom: 10px;">Legend</h4>'
+                + `<div class="legend-item">${swatch('color-box')}<span>Location</span></div>`
+                + Object.keys(companies).sort().map(c => `
+                    <div class="company-section">
+                        <div class="company-header">${c}</div>
+                        ${[...companies[c].values()].map(a => `<div class="legend-item">${swatch('color-box', a)}<span>${a.model}</span></div>`).join('')}
+                    </div>`).join('');
+        }
+
+        function filter() {
+            keys = [...locations.keys()].filter(key => shown(key).length);
+            $('location-selector').innerHTML = keys.map((key, i) => {
+                const t = locations.get(key)[0];
+                return `<option value="${key}">${i + 1}: ${t.country} (${+t.lat.toFixed(5)},${+t.lng.toFixed(5)})</option>`;
+            }).join('');
+            const empty = keys.length === 0;
+            $('no-data-message').style.display = empty ? 'block' : 'none';
+            $('navigation').style.display = empty ? 'none' : 'flex';
+            $('info-panel').style.display = empty ? 'none' : 'block';
+            $('map').style.opacity = empty ? '0.3' : '1';
+            if (!empty) show(0);
+        }
+
+        function details(a) {
+            const distance = a.distance_km === null ? '-' : a.distance_km.toFixed(2);
+            const score = a.points === null ? '-' : Math.round(a.points).toLocaleString();
+            return `
+                <div class="model-details">
+                    <div class="model-header">
+                        ${swatch('model-color', a)}
+                        <span>${a.model}</span>
+                        <span class="stats-summary">Dataset: ${a.map} | Company: ${company(a)}</span>
+                    </div>
+                    <div>
+                        <p>Guessed: ${a.guess_country || 'No guess'} (${a.guess_lat ?? 'N/A'}, ${a.guess_lng ?? 'N/A'})</p>
+                        <p>Distance: ${distance} km | Score: ${score}</p>
+                        <p class="${a.passed ? 'correct' : 'incorrect'}">Correct country: ${a.passed ? 'Yes ✓' : 'No ✗'}</p>
+                        ${a.refused ? '<p><strong>Note:</strong> Model refused to guess</p>' : ''}
+                        ${a.error ? `<p><strong>Error:</strong> ${a.error}</p>` : ''}
+                    </div>
+                </div>`;
+        }
+
+        function show(i) {
+            index = i;
+            const here = shown(keys[i]);
+            const t = here[0];
+            $('location-selector').value = keys[i];
+            $('location-counter').textContent = `Location ${i + 1} of ${keys.length}`;
+            $('location-info').textContent = `${t.country} (${t.lat.toFixed(4)}, ${t.lng.toFixed(4)})`;
+            layer.clearLayers();
+            L.marker([t.lat, t.lng], {icon: TRUE_ICON}).bindPopup(t.country).addTo(layer);
+            const points = [[t.lat, t.lng]];
+            here.filter(a => a.guess_lat !== null && !a.refused).forEach(a => {
+                const guess = [a.guess_lat, a.guess_lng];
+                points.push(guess);
+                const icon = L.divIcon({
+                    html: `<div style="background-color: ${color(a)}; width: 15px; height: 15px; border-radius: 50%; border: 2px solid white;"></div>`,
+                    className: 'custom-marker',
+                    iconSize: [25, 25],
+                    iconAnchor: [8, 8]
+                });
+                L.marker(guess, {icon}).bindPopup(a.model).addTo(layer);
+                L.polyline([[t.lat, t.lng], guess], {color: color(a), dashArray: '5, 10', weight: 2, opacity: 0.7}).addTo(layer);
+            });
+            points.length > 1 ? map.fitBounds(points, {padding: [50, 50]}) : map.setView(points[0], 5);
+            $('model-comparisons').innerHTML = here.map(details).join('');
+        }
+
+        const step = by => index + by >= 0 && index + by < keys.length && show(index + by);
+
+        legend();
+        $('dataset-filter').innerHTML = '<option value="all">All Datasets</option>' + datasets.map(d => `<option value="${d}">${d}</option>`).join('');
+        filter();
+        $('dataset-filter').addEventListener('change', e => { dataset = e.target.value; filter(); });
+        $('location-selector').addEventListener('change', e => show(keys.indexOf(e.target.value)));
+        $('prev-button').addEventListener('click', () => step(-1));
+        $('next-button').addEventListener('click', () => step(1));
+        document.addEventListener('keydown', e => e.key in ARROWS && step(ARROWS[e.key]));
+    </script>
+</body>
+</html>

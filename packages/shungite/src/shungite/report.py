@@ -83,7 +83,7 @@ class Prices:
 
 @dataclass(frozen=True)
 class Trial:
-    task: str
+    data: dict[str, Any]
     items: dict[str, Item] | None
     model: Tokens | None
     judge: Tokens | None
@@ -96,13 +96,17 @@ class Trial:
         items = trace["info"].get("items")
         ends = [span["end"] for span in timing.values() if isinstance(span, dict) and span.get("end")]
         return cls(
-            task=trace["task"]["data"]["id"],
+            data=trace["task"]["data"],
             items=None if items is None else {key: Item.model_validate(item) for key, item in items.items()},
             model=Tokens.of(trace["usage"]) if "usage" in trace else None,
             judge=Tokens.total(trace["extra_usage"]) if "extra_usage" in trace else None,
             start=timing.get("start"),
             end=max(ends, default=None),
         )
+
+    @property
+    def task(self) -> str:
+        return self.data["id"]
 
     @property
     def seconds(self) -> float | None:

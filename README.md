@@ -42,6 +42,6 @@ uv run --env-file .env --extra build python -m geobench.build --num <n> --output
 This needs `NCFA` in `.env`. Instructions for setting it up can be found [here](https://github.com/EvickaStudio/GeoGuessr-API?tab=readme-ov-file#authentication).
 
 ## Compare guesses
-Running the `browser/main.py` script and opening `visualization.html` can show you all guesses for a location made by the models.
+Run `uv run python main.py` from `visualizations/browser/`, then open the `visualization.html` it writes there to see every model's guess for each location.
 
 ![](img/visualization.png)

@@ -20,6 +20,7 @@ viz = [
     "matplotlib",
     "pandas",
     "seaborn",
+    "streamlit",
 ]
 
 [dependency-groups]

@@ -24,7 +24,7 @@ responses/
 
 # Visualizations output
 visualizations/*.csv
-visualizations/*/*.html
+visualizations/*/visualization.html
 
 outputs/
 .pytest_cache/

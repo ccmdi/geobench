@@ -39,10 +39,17 @@ class Entry:
     def status(self) -> Status:
         return SHELVES[str(self.path.parent)]
 
+    @property
+    def map(self) -> str | None:
+        return self.config["env"]["taskset"].get("map")
+
+    @property
+    def board(self) -> dict[str, Any]:
+        return self.config.get("board", {})
+
     def as_json(self) -> dict[str, Any]:
         result = Result(self.run.setup, (self.run,))
         measures = result.measures
-        board = self.config.get("board", {})
 
         def measure(name: str, statistic: str) -> float | None:
             return getattr(measures[name], statistic) if name in measures else None
@@ -50,10 +57,10 @@ class Entry:
         return {
             "run": str(self.path),
             "status": self.status,
-            "map": self.config["env"]["taskset"].get("map"),
+            "map": self.map,
             "model": result.setup.model,
-            "provider": board.get("provider"),
-            "deprecated": board.get("deprecated", False),
+            "provider": self.board.get("provider"),
+            "deprecated": self.board.get("deprecated", False),
             "date": next(iter(result.run_dates), None),
             "n": len(result.items),
             "country_success_rate": result.pass_rate,
