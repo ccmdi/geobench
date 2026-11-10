@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 import verifiers.v1 as vf
 from conftest import IMAGES, MAP, ROOT, final, image_bytes, write_map
-from fake_model import FakeModel
+from shungite.testing import FakeModel, Reply
 from verifiers.v1.utils.trace_store import read_episodes
 
 from geobench.prompt import PROMPT
@@ -44,7 +44,7 @@ async def vf_run(model: FakeModel, dataset: Path, out: Path, *options: str) -> N
 async def test_vf_run_scores_the_reference_location_full_points(tmp_path: Path) -> None:
     [first, *_] = IMAGES
     reference = Coordinates(lat=first["lat"], lng=first["lng"])
-    model = FakeModel([final("United States", reference)])
+    model = FakeModel([Reply(final("United States", reference))])
     await vf_run(model, write_map(tmp_path / "dataset"), tmp_path / "out", "-n", "1")
 
     [request] = model.requests
@@ -67,7 +67,7 @@ async def test_vf_run_scores_the_reference_location_full_points(tmp_path: Path) 
 @needs_tmp
 async def test_two_trials_per_round_report_pass_at_k_and_pass_hat_k(tmp_path: Path) -> None:
     first, second = (Coordinates(lat=image["lat"], lng=image["lng"]) for image in IMAGES[:2])
-    model = FakeModel([final("United States", first), final("Canada", first), final("Kenya", second), "I cannot tell."])
+    model = FakeModel([Reply(final("United States", first)), Reply(final("Canada", first)), Reply(final("Kenya", second)), Reply("I cannot tell.")])
     await vf_run(model, write_map(tmp_path / "dataset"), tmp_path / "out", "-n", "2", "-r", "2", "-c", "1")
     assert all(not any(m["role"] == "assistant" for m in request["messages"]) for request in model.requests)
 

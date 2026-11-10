@@ -734,9 +734,9 @@ viz = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "aiohttp" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
+    { name = "shungite", extra = ["testing"] },
 ]
 
 [package.metadata]
@@ -756,9 +756,9 @@ provides-extras = ["build", "viz"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "aiohttp" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
+    { name = "shungite", extras = ["testing"], editable = "packages/shungite" },
 ]
 
 [[package]]
@@ -2473,11 +2473,18 @@ dependencies = [
     { name = "pydantic" },
 ]
 
+[package.optional-dependencies]
+testing = [
+    { name = "aiohttp" },
+]
+
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp", marker = "extra == 'testing'", specifier = ">=3.10" },
     { name = "haversine", specifier = ">=2.9.0" },
     { name = "pydantic", specifier = ">=2.14.3" },
 ]
+provides-extras = ["testing"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.2.0" }]

@@ -25,7 +25,7 @@ viz = [
 ]
 
 [dependency-groups]
-dev = ["aiohttp", "pytest", "pytest-asyncio"]
+dev = ["shungite[testing]", "pytest", "pytest-asyncio"]
 
 [tool.uv.sources]
 shungite = { path = "packages/shungite", editable = true }
