@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 
 from shungite import Item
-from shungite.report import Price, Prices, Report, Run, main
+from shungite.report import Measure, Price, Prices, Report, Run, main
 
 DAY = 1_794_052_800.0
 P, F, U = (1.0, True), (0.0, False), (None, None)
@@ -22,9 +22,12 @@ def trace(task: str, items: dict[str, tuple[float | None, bool | None]] | None, 
     }
 
 
-def write_run(dir: Path, traces: list[dict[str, Any]], model: str = "lab/model-1", benchmark: str = "bench", **sampling: object) -> Path:
+def write_run(
+    dir: Path, traces: list[dict[str, Any]], model: str = "lab/model-1", benchmark: str = "bench", report: dict[str, str] | None = None, **sampling: object
+) -> Path:
     (dir / "configs" / "resolved").mkdir(parents=True)
     config = {"env": {"taskset": {"id": benchmark}}, "model": model, "sampling": {"temperature": None, "max_tokens": None} | sampling}
+    config |= {} if report is None else {"report": report}
     (dir / "configs" / "resolved" / "run.json").write_text(json.dumps(config))
     (dir / "traces.jsonl").write_text("".join(json.dumps({"traces": [t]}) + "\n" for t in traces))
     return dir
@@ -184,3 +187,38 @@ def test_an_item_is_decided_as_a_whole_and_scores_in_unit_range(score: float | N
 def test_an_item_keeps_its_extra_fields() -> None:
     item = Item(score=0.5, passed=False, kind="location", km=0.7)
     assert item.model_dump() == {"score": 0.5, "passed": False, "kind": "location", "km": 0.7}
+
+
+def test_numeric_item_fields_report_their_mean_and_median(tmp_path: Path) -> None:
+    traces = [trace(task, {"1": P}) for task in "abcde"]
+    for t, km in zip(traces, [1.0, 2.0, 3.0, 5.0, None]):
+        t["info"]["items"]["1"] |= {"refused": km is None} | ({} if km is None else {"km": km})
+    [middle] = report(write_run(tmp_path / "middle", traces)).results
+    [high] = report(write_run(tmp_path / "high", traces, report={"median": "high"})).results
+    assert middle.measures == {"km": Measure(2.75, 2.5), "refused": Measure(0.2, 0.0)}
+    assert high.measures["km"] == Measure(2.75, 3.0)
+    assert high.as_json(Prices())["measures"]["km"] == {"mean": 2.75, "median": 3.0}
+
+
+def test_unrecorded_usage_timing_and_sampling_read_as_blank(tmp_path: Path) -> None:
+    bare = {"task": {"type": "Task", "data": {"id": "a"}}, "info": {"items": {"1": {"score": 1.0, "passed": True}}}}
+    dir = write_run(tmp_path, [bare, bare | {"timing": {"start": DAY}}])
+    (dir / "configs" / "resolved" / "run.json").write_text(json.dumps({"env": {"taskset": {"id": "bench"}}, "model": "lab/model-1"}))
+    [result] = report(dir).results
+    assert (result.model_tokens, result.judge_tokens, result.elapsed, result.seconds_per_trial) == (None, None, None, None)
+    assert result.run_dates == ["2026-11-07"]
+    assert result.cost_cell(Prices(Price(input=1.0, output=1.0))) == "-"
+    assert str(result.setup) == "lab/model-1"
+    shown = result.as_json(Prices())
+    assert (shown["sampling"], shown["usage"]["model"], shown["usage"]["elapsed_seconds"]) == (None, None, None)
+    text = report(dir).markdown(Prices())
+    assert "Model input tokens | - | -" in text
+    assert "Wall time | - | -" in text
+
+
+def test_traces_split_only_on_newlines(tmp_path: Path) -> None:
+    line = trace("a", {"1": P}) | {"last_reply": "a\u2028b\x85c"}
+    dir = tmp_path / "run"
+    write_run(dir, [line])
+    (dir / "traces.jsonl").write_text(json.dumps({"traces": [line]}, ensure_ascii=False) + "\n", "utf-8")
+    assert len(report(dir).results[0].trials) == 1

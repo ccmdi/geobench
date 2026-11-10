@@ -5,6 +5,7 @@ from collections import Counter
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from enum import StrEnum
 from functools import cached_property
 from math import comb
 from pathlib import Path
@@ -18,6 +19,25 @@ MILLION = 1_000_000
 def average(values: Iterable[float]) -> float | None:
     values = list(values)
     return statistics.fmean(values) if values else None
+
+
+def sum_recorded[T](values: Iterable[T | None], start: T) -> T | None:
+    recorded = [value for value in values if value is not None]
+    return sum(recorded, start) if recorded else None
+
+
+class Median(StrEnum):
+    MIDDLE = "middle"
+    HIGH = "high"
+
+    def __call__(self, values: Sequence[float]) -> float:
+        return statistics.median_high(values) if self is Median.HIGH else statistics.median(values)
+
+
+@dataclass(frozen=True)
+class Measure:
+    mean: float
+    median: float
 
 
 @dataclass(frozen=True)
@@ -65,28 +85,28 @@ class Prices:
 class Trial:
     task: str
     items: dict[str, Item] | None
-    model: Tokens
-    judge: Tokens
-    start: float
-    end: float
+    model: Tokens | None
+    judge: Tokens | None
+    start: float | None
+    end: float | None
 
     @classmethod
     def parse(cls, trace: dict[str, Any]) -> Self:
-        timing = trace["timing"]
+        timing = trace.get("timing", {})
         items = trace["info"].get("items")
         ends = [span["end"] for span in timing.values() if isinstance(span, dict) and span.get("end")]
         return cls(
             task=trace["task"]["data"]["id"],
             items=None if items is None else {key: Item.model_validate(item) for key, item in items.items()},
-            model=Tokens.of(trace["usage"]) if "usage" in trace else Tokens(),
-            judge=Tokens.total(trace.get("extra_usage", [])),
-            start=timing["start"],
-            end=max(ends, default=timing["start"]),
+            model=Tokens.of(trace["usage"]) if "usage" in trace else None,
+            judge=Tokens.total(trace["extra_usage"]) if "extra_usage" in trace else None,
+            start=timing.get("start"),
+            end=max(ends, default=None),
         )
 
     @property
-    def seconds(self) -> float:
-        return self.end - self.start
+    def seconds(self) -> float | None:
+        return None if self.start is None or self.end is None else self.end - self.start
 
 
 @dataclass(frozen=True)
@@ -94,19 +114,21 @@ class Setup:
     benchmark: str
     model: str
     sampling: str
+    median: Median = Median.MIDDLE
 
     @classmethod
     def of(cls, config: dict[str, Any]) -> Self:
-        sampling = {key: value for key, value in config["sampling"].items() if value is not None}
-        return cls(config["env"]["taskset"]["id"], config["model"], json.dumps(sampling, sort_keys=True))
+        sampling = None if config.get("sampling") is None else {key: value for key, value in config["sampling"].items() if value is not None}
+        median = Median(config.get("report", {}).get("median", Median.MIDDLE))
+        return cls(config["env"]["taskset"]["id"], config["model"], json.dumps(sampling, sort_keys=True), median)
 
     @property
-    def settings(self) -> dict[str, Any]:
+    def settings(self) -> dict[str, Any] | None:
         return json.loads(self.sampling)
 
     def __str__(self) -> str:
         settings = ", ".join(
-            f"{key} {value if isinstance(value, str) else json.dumps(value)}" for key, value in self.settings.items()
+            f"{key} {value if isinstance(value, str) else json.dumps(value)}" for key, value in (self.settings or {}).items()
         )
         return f"{self.model} ({settings})" if settings else self.model
 
@@ -117,14 +139,18 @@ class Run:
     trials: tuple[Trial, ...]
 
     @classmethod
-    def read(cls, dir: Path) -> Self:
-        config = json.loads((dir / "configs" / "resolved" / "run.json").read_text())
-        episodes = [json.loads(line) for line in (dir / "traces.jsonl").read_text().splitlines() if line.strip()]
+    def of(cls, config: dict[str, Any], episodes: Iterable[dict[str, Any]]) -> Self:
         return cls(Setup.of(config), tuple(Trial.parse(trace) for episode in episodes for trace in episode["traces"]))
 
+    @classmethod
+    def read(cls, dir: Path) -> Self:
+        config = json.loads((dir / "configs" / "resolved" / "run.json").read_text())
+        return cls.of(config, (json.loads(line) for line in (dir / "traces.jsonl").read_text("utf-8").split("\n") if line.strip()))
+
     @property
-    def elapsed(self) -> float:
-        return max(t.end for t in self.trials) - min(t.start for t in self.trials) if self.trials else 0.0
+    def elapsed(self) -> float | None:
+        timed = [t for t in self.trials if t.seconds is not None]
+        return max(t.end for t in timed) - min(t.start for t in timed) if timed else None
 
 
 @dataclass(frozen=True)
@@ -227,6 +253,16 @@ class Result:
         return [mean for mean in means if mean is not None]
 
     @property
+    def measures(self) -> dict[str, Measure]:
+        values: dict[str, list[float]] = {}
+        for outcomes in self.items:
+            for item in outcomes.trials:
+                for name, value in (item.model_extra or {}).items():
+                    if isinstance(value, int | float):
+                        values.setdefault(name, []).append(float(value))
+        return {name: Measure(statistics.fmean(v), self.setup.median(v)) for name, v in sorted(values.items())}
+
+    @property
     def unknown(self) -> int:
         return sum(outcomes.unknown for outcomes in self.items)
 
@@ -235,42 +271,42 @@ class Result:
         return sum(trial.items is None for trial in self.trials)
 
     @property
-    def model_tokens(self) -> Tokens:
-        return sum((trial.model for trial in self.trials), Tokens())
+    def model_tokens(self) -> Tokens | None:
+        return sum_recorded((trial.model for trial in self.trials), Tokens())
 
     @property
-    def judge_tokens(self) -> Tokens:
-        return sum((trial.judge for trial in self.trials), Tokens())
+    def judge_tokens(self) -> Tokens | None:
+        return sum_recorded((trial.judge for trial in self.trials), Tokens())
 
     @property
     def full_runs(self) -> float:
         return len(self.trials) / len(Counter(trial.task for trial in self.trials))
 
     @property
-    def elapsed(self) -> float:
-        return sum(run.elapsed for run in self.runs)
+    def elapsed(self) -> float | None:
+        return sum_recorded((run.elapsed for run in self.runs), 0.0)
 
     @property
-    def seconds_per_trial(self) -> float:
-        return statistics.fmean(trial.seconds for trial in self.trials)
+    def seconds_per_trial(self) -> float | None:
+        return average(trial.seconds for trial in self.trials if trial.seconds is not None)
 
     @property
     def run_dates(self) -> list[str]:
-        starts = (min(trial.start for trial in run.trials) for run in self.runs if run.trials)
-        return sorted({datetime.fromtimestamp(start, UTC).date().isoformat() for start in starts})
+        starts = [[trial.start for trial in run.trials if trial.start is not None] for run in self.runs]
+        return sorted({datetime.fromtimestamp(min(s), UTC).date().isoformat() for s in starts if s})
 
-    def bill(self, prices: Prices) -> dict[str, tuple[Tokens, float | None]]:
+    def bill(self, prices: Prices) -> dict[str, tuple[Tokens | None, float | None]]:
         return {
-            who: (spent, None if price is None else price(spent))
+            who: (spent, None if spent is None or price is None else price(spent))
             for who, spent, price in (
-                ("model", self.model_tokens / self.full_runs, prices.model),
-                ("judge", self.judge_tokens / self.full_runs, prices.judge),
+                ("model", self.model_tokens and self.model_tokens / self.full_runs, prices.model),
+                ("judge", self.judge_tokens and self.judge_tokens / self.full_runs, prices.judge),
             )
         }
 
     def cost_cell(self, prices: Prices) -> str:
         return " + ".join(
-            ("" if who == "model" else f"{who} ") + (str(spent) if cost is None else f"${cost:,.2f}")
+            ("" if who == "model" else f"{who} ") + ("-" if spent is None else str(spent) if cost is None else f"${cost:,.2f}")
             for who, (spent, cost) in self.bill(prices).items()
             if spent or who == "model"
         )
@@ -287,11 +323,12 @@ class Result:
             "pass_hat_k": self.pass_hat_k,
             "mean_score": self.mean_score,
             "trial_means": self.trial_means,
+            "measures": {name: vars(measure) for name, measure in self.measures.items()},
             "unknown": self.unknown,
             "errored": self.errored,
             "usage": {
-                "model": vars(self.model_tokens),
-                "judge": vars(self.judge_tokens),
+                "model": None if self.model_tokens is None else vars(self.model_tokens),
+                "judge": None if self.judge_tokens is None else vars(self.judge_tokens),
                 "trials": len(self.trials),
                 "full_runs": self.full_runs,
                 "elapsed_seconds": self.elapsed,
@@ -311,8 +348,8 @@ class Result:
         }
 
 
-def percent(value: float | None) -> str:
-    return "-" if value is None else f"{value:.1%}"
+def shown(value: float | None, template: str) -> str:
+    return "-" if value is None else template.format(value)
 
 
 def span(low: float, high: float, format: str = "") -> str:
@@ -371,11 +408,11 @@ class Report:
                 [
                     r.setup,
                     span(*r.trials_per_task),
-                    percent(r.pass_rate),
-                    percent(r.pass_hat_k),
+                    shown(r.pass_rate, "{:.1%}"),
+                    shown(r.pass_hat_k, "{:.1%}"),
                     r.cost_cell(prices),
                     "-" if r.mean_score is None else f"{r.mean_score:.3f} ({span(min(r.trial_means), max(r.trial_means), '.3f')})",
-                    percent(r.pass_at_k),
+                    shown(r.pass_at_k, "{:.1%}"),
                     r.k,
                     ", ".join(r.run_dates),
                     *(cell(r) for _, cell in extra),
@@ -395,12 +432,18 @@ class Report:
                     ["Usage", "Total", "Per trial"],
                     [
                         *(
-                            (f"{who} {side} tokens", f"{total:,.0f}", f"{total / trials:,.1f}")
+                            (f"{who} {side} tokens", shown(spent, "{:,.0f}"), shown(None if spent is None else spent / trials, "{:,.1f}"))
                             for who, tokens in usage
-                            for side, total in (("input", tokens.input), ("output", tokens.output))
+                            for side in ("input", "output")
+                            for spent in [None if tokens is None else getattr(tokens, side)]
                         ),
-                        ("Wall time", f"{r.elapsed:,.1f} s", f"{r.seconds_per_trial:,.1f} s"),
+                        ("Wall time", shown(r.elapsed, "{:,.1f} s"), shown(r.seconds_per_trial, "{:,.1f} s")),
                     ],
+                ),
+                *(
+                    ["", *table(["Measure", "Mean", "Median"], ((name, f"{m.mean:.4g}", f"{m.median:.4g}") for name, m in r.measures.items()))]
+                    if r.measures
+                    else []
                 ),
                 "",
                 *table(
