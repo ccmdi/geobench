@@ -37,7 +37,7 @@ You get Markdown tables: per model, the pass rate, pass^k, pass@k, mean score (p
 
 ## Create a dataset
 ```bash
-uv run --extra build python dataset.py --num <n> --output <map> --map <geoguessr map id>
+uv run --env-file .env --extra build python -m geobench.build --num <n> --output <map> --map <geoguessr map id>
 ```
 This needs `NCFA` in `.env`. Instructions for setting it up can be found [here](https://github.com/EvickaStudio/GeoGuessr-API?tab=readme-ov-file#authentication).
 

@@ -12,10 +12,8 @@ dependencies = [
 
 [project.optional-dependencies]
 build = [
-    "aiohttp",
-    "numpy",
-    "opencv-python",
-    "Pillow",
+    "charoite",
+    "httpx",
     "python-dotenv",
 ]
 viz = [
@@ -25,10 +23,11 @@ viz = [
 ]
 
 [dependency-groups]
-dev = ["shungite[testing]", "pytest", "pytest-asyncio"]
+dev = ["charoite", "shungite[testing]", "pytest", "pytest-asyncio"]
 
 [tool.uv.sources]
 shungite = { path = "packages/shungite", editable = true }
+charoite = { path = "packages/charoite", editable = true }
 
 [build-system]
 requires = ["hatchling"]
