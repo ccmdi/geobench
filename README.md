@@ -43,5 +43,3 @@ This needs `NCFA` in `.env`. Instructions for setting it up can be found [here](
 
 ## Compare guesses
 Run `uv run python main.py` from `visualizations/browser/`, then open the `visualization.html` it writes there to see every model's guess for each location.
-
-![](img/visualization.png)
