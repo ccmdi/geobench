@@ -56,7 +56,7 @@ def test_the_site_shows_public_runs_with_their_distances_and_countries(root: Pat
                 "countries": [
                     {"country": "Japan", "n": 2, "country_success_rate": 0.0, "average_score": 4700.0},
                     {"country": "Kenya", "n": 1, "country_success_rate": 0.0, "average_score": 4300.0},
-                    {"country": "United States of America (the)", "n": 1, "country_success_rate": 1.0, "average_score": 4233.0},
+                    {"country": "United States", "n": 1, "country_success_rate": 1.0, "average_score": 4233.0},
                 ],
             }
         ],

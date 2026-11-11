@@ -9,7 +9,7 @@ from typing import Any
 
 from geobench.answers import Answer, answers
 from geobench.leaderboard import Status, leaderboard
-from shungite.country import canonical_country
+from shungite.country import place_name
 from shungite.report import average
 
 DIGITS = {"rate": 3, "score": 2, "km": 1}
@@ -37,7 +37,7 @@ def country(name: str | None, rows: list[Answer]) -> dict[str, Any]:
 
 
 def breakdown(rows: Iterable[Answer]) -> dict[str, Any]:
-    named = sorted(((canonical_country(row.country), row) for row in rows), key=itemgetter(0))
+    named = sorted(((place_name(row.country), row) for row in rows), key=itemgetter(0))
     return {
         "distances_km": sorted(row.distance_km for _, row in named if row.distance_km is not None),
         "countries": [country(name, [row for _, row in group]) for name, group in groupby(named, key=itemgetter(0))],

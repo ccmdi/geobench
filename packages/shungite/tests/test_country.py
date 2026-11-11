@@ -1,7 +1,7 @@
 import pytest
 
 from shungite import same_country
-from shungite.country import canonical_country
+from shungite.country import canonical_country, place_name
 
 
 @pytest.mark.parametrize(
@@ -64,4 +64,18 @@ def test_somaliland_counts_as_somalia_and_kosovo_stands_alone() -> None:
 
 
 def test_a_name_it_does_not_know_keeps_its_casing() -> None:
-    assert canonical_country(" Saint  Barthelemy ") == "Saint Barthelemy"
+    assert canonical_country(" Atlantis  Minor ") == "Atlantis Minor"
+
+
+@pytest.mark.parametrize(
+    ("label", "country", "place"),
+    [
+        ("United Kingdom of Great Britain and Northern Ireland (the)", "United Kingdom", "United Kingdom"),
+        ("Korea (the Republic of)", "South Korea", "South Korea"),
+        ("Réunion", "France", "Réunion"),
+        ("Saint Barthelemy", "France", "Saint Barthélemy"),
+        ("Taiwan (Province of China)", "China", "Taiwan"),
+    ],
+)
+def test_a_label_resolves_to_its_country_and_its_own_place(label: str, country: str, place: str) -> None:
+    assert (canonical_country(label), place_name(label)) == (country, place)
