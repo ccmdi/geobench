@@ -6,14 +6,15 @@ from typing import Any
 
 import pytest
 import verifiers.v1 as vf
-from conftest import IMAGES, MAP, ROOT, write_map
+from conftest import CATALOG, IMAGES, MAP, ROOT, write_map
 from verifiers.v1.utils.trace_store import read_episodes
 
 from geobench.leaderboard import Entry, Status, leaderboard
 from geobench.legacy import LegacyRun
 
 RESPONSES = ROOT / "responses"
-SUMMARY_TO_ENTRY = {"test": "map", "total_samples": "n"}
+SUMMARY_TO_ENTRY = {"test": "map", "total_samples": "n", "model_id": "model"}
+NOT_SHOWN = {"model", "sampling"}
 COLUMNS = ["location_id", "country_true", "lat_true", "lng_true", "refused", "error_message", "country_guess", "lat_guess", "lng_guess", "distance_km", "score", "country_correct"]
 ANSWERED = [
     ["1", "United States of America (the)", 39.4817, -98.2263, False, "", "United States", 40.0, -90.0, 308.6, 4233.0, True],
@@ -31,7 +32,7 @@ SUMMARY = {
     "average_score": (4233.0 + 4300.0 + 4700.0) / 3,
     "median_distance_km": 285.1,
     "median_score": 4300.0,
-    "provider": "Lab",
+    "model_id": "lab/model-1",
 }
 
 
@@ -57,7 +58,7 @@ def disagreements(summary: dict[str, Any], shown: dict[str, Any]) -> set[str]:
             return isclose(recorded, value, rel_tol=1e-12)
         return recorded == value
 
-    return {key for key, recorded in summary.items() if not same(key, recorded)}
+    return {key for key, recorded in summary.items() if key not in NOT_SHOWN and not same(key, recorded)}
 
 
 def test_an_old_run_translates_to_its_summary(tmp_path: Path) -> None:
@@ -66,9 +67,10 @@ def test_an_old_run_translates_to_its_summary(tmp_path: Path) -> None:
     old.write()
 
     assert sorted(path.name for path in dir.iterdir()) == ["configs", "output", "results", "traces.jsonl"]
-    shown = Entry.read(tmp_path, dir).as_json()
+    shown = Entry.read(tmp_path, dir).as_json(CATALOG)
     assert disagreements(SUMMARY, shown) == set()
-    assert (shown["status"], shown["date"], shown["deprecated"]) == (Status.PUBLIC, "2025-05-22", False)
+    assert (shown["status"], shown["date"], shown["name"], shown["lab_name"], shown["released"]) == (Status.PUBLIC, "2025-05-22", "Lab Model 1", "Lab", "2025-01-14")
+    assert (shown["deprecated"], shown["thinking"], shown["effort"], shown["search"]) == (False, False, None, False)
     assert old.config["sampling"] is None
     assert old.config["report"] == {"median": "high"}
 
@@ -90,7 +92,7 @@ def test_an_old_run_translates_to_its_summary(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize(("median_score", "median"), [(4700.0, "high"), (4500.0, "middle")])
 def test_the_median_rule_is_the_one_the_summary_used(tmp_path: Path, median_score: float, median: str) -> None:
-    summary = {"median_score": median_score, "median_distance_km": None}
+    summary = {"median_score": median_score, "median_distance_km": None, "model_id": "lab/model-1"}
     dir = write_old_run(tmp_path / f"Lab Model 1_{MAP}_2025-03-25T14_35_56", ANSWERED[1:], summary)
     assert LegacyRun(dir, tmp_path / "dataset").config["report"] == {"median": median}
 
@@ -107,20 +109,35 @@ def test_an_old_csv_without_location_ids_finds_them_in_the_dataset(tmp_path: Pat
 
 def test_the_leaderboard_shelves_runs_by_folder_and_sorts_them(tmp_path: Path) -> None:
     shelved = [
-        ("", "B", "acw-02-25-25", {}),
-        ("", "C", "acw-02-25-25", {}),
-        (".hidden", "A", "acw-02-25-25", {}),
-        (".incomplete", "A", "avw-03-27-25", {}),
+        ("", "lab/model-2", "acw-02-25-25", {}),
+        ("", "lab/model-1", "acw-02-25-25", {}),
+        (".hidden", "lab/model-1", "avw-03-27-25", {}),
+        (".incomplete", "model-1", "acw-02-25-25", {}),
     ]
-    for shelf, model, map, changes in shelved:
-        summary = {key: value for key, value in (SUMMARY | {"model": model, "test": map} | changes).items() if value is not None}
-        LegacyRun(write_old_run(tmp_path / shelf / f"{model}_{map}_2025-05-22T12_52_37", [*ANSWERED, REFUSED], summary), tmp_path).write()
-    board = leaderboard(tmp_path)
-    assert [(r["map"], r["model"], r["status"], r["provider"]) for r in board["runs"]] == [
-        ("acw-02-25-25", "A", Status.HIDDEN, "Lab"),
-        ("acw-02-25-25", "B", Status.PUBLIC, "Lab"),
-        ("acw-02-25-25", "C", Status.PUBLIC, "Lab"),
-        ("avw-03-27-25", "A", Status.INCOMPLETE, "Lab"),
+    for n, (shelf, model, map, changes) in enumerate(shelved):
+        summary = {key: value for key, value in (SUMMARY | {"model_id": model, "test": map} | changes).items() if value is not None}
+        LegacyRun(write_old_run(tmp_path / shelf / f"Lab Model {n}_{map}_2025-05-22T12_52_37", [*ANSWERED, REFUSED], summary), tmp_path).write()
+    board = leaderboard(tmp_path, CATALOG)
+    assert [(r["map"], r["model"], r["status"], r["deprecated"]) for r in board["runs"]] == [
+        ("acw-02-25-25", "lab/model-1", Status.INCOMPLETE, False),
+        ("acw-02-25-25", "lab/model-1", Status.PUBLIC, False),
+        ("acw-02-25-25", "lab/model-2", Status.PUBLIC, True),
+        ("avw-03-27-25", "lab/model-1", Status.HIDDEN, False),
     ]
-    assert json.dumps(board) == json.dumps(leaderboard(tmp_path))
+    assert json.dumps(board) == json.dumps(leaderboard(tmp_path, CATALOG))
+
+
+@pytest.mark.parametrize(
+    ("sampling", "thinking", "effort", "search"),
+    [
+        ({"thinking": {"type": "enabled"}}, True, None, False),
+        ({"reasoning_effort": "high"}, True, "high", False),
+        ({"tools": [{"google_search": {}}]}, False, None, True),
+    ],
+)
+def test_a_runs_sampling_says_whether_it_thought_and_searched(tmp_path: Path, sampling: dict[str, Any], thinking: bool, effort: str | None, search: bool) -> None:
+    dir = write_old_run(tmp_path / f"Lab Model 1_{MAP}_2025-05-22T12_52_37", [*ANSWERED, REFUSED], SUMMARY | {"sampling": sampling})
+    LegacyRun(dir, tmp_path).write()
+    shown = Entry.read(tmp_path, dir).as_json(CATALOG)
+    assert (shown["thinking"], shown["effort"], shown["search"]) == (thinking, effort, search)
 

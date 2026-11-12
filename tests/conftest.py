@@ -7,12 +7,20 @@ import verifiers.v1 as vf
 from verifiers.v1.graph import MessageNode
 
 from geobench import GeoTaskset
+from geobench.catalog import Catalog
 from geobench.taskset import GeoTask, GeoTasksetConfig
 from shungite import Coordinates
 
 ROOT = Path(__file__).parents[1]
 
 MAP = "test-map"
+CATALOG = Catalog.of(
+    {
+        "lab/model-1": {"id": "lab/model-1", "name": "Lab Model 1", "release_date": "2025-01-14"},
+        "lab/model-2": {"id": "lab/model-2", "name": "Lab Model 2", "release_date": "2024-06"},
+    },
+    {"lab": {"id": "lab", "name": "Lab", "models": {"model-1": {"id": "model-1", "cost": {"input": 2, "output": 8}}}}},
+)
 BOUNDS = {"min": {"lat": -55.0, "lng": -170.0}, "max": {"lat": 80.0, "lng": 178.0}}
 IMAGES: list[dict[str, Any]] = [
     {"image_path": "images/1.jpg", "country": "United States of America (the)", "lat": 39.4817, "lng": -98.2263},

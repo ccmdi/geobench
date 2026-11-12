@@ -8,12 +8,12 @@ requires-python = ">=3.12,<3.15"
 dependencies = [
     "verifiers==0.4.2.dev11",
     "shungite",
+    "httpx",
 ]
 
 [project.optional-dependencies]
 build = [
     "charoite",
-    "httpx",
     "python-dotenv",
 ]
 viz = [

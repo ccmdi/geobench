@@ -90,7 +90,7 @@ class LegacyRun:
 
     @property
     def model(self) -> str:
-        return self.summary.get("model") or self.folder["model"]
+        return self.summary["model_id"]
 
     @property
     def median(self) -> Median:
@@ -109,13 +109,11 @@ class LegacyRun:
 
     @property
     def config(self) -> dict[str, Any]:
-        board = {"provider": self.summary.get("provider"), "deprecated": self.summary.get("deprecated", False)}
         return {
             "env": {"taskset": {"id": "geobench", "map": self.folder["map"]}},
             "model": self.model,
-            "sampling": None,
+            "sampling": self.summary.get("sampling"),
             "report": {"median": self.median},
-            "board": board,
         }
 
     def reply(self, row: Row) -> str | None:

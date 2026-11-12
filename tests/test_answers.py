@@ -12,7 +12,7 @@ def test_answers_flatten_each_listed_runs_items_with_their_truth(tmp_path: Path)
         dir = write_old_run(tmp_path / shelf / f"{model}_{MAP}_2025-05-22T12_52_37", [*ANSWERED, REFUSED], SUMMARY | {"model": model})
         LegacyRun(dir, tmp_path).write()
     run = f"Lab Model 1_{MAP}_2025-05-22T12_52_37"
-    shared = {"run": run, "map": MAP, "model": "Lab Model 1", "provider": "Lab"}
+    shared = {"run": run, "map": MAP, "model": "lab/model-1"}
     listed = list(answers(tmp_path))
     assert [answer.location for answer in listed] == ["1", "2", "3", "4"]
     assert [listed[0], listed[-1]] == [

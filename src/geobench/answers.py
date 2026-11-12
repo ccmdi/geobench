@@ -12,7 +12,6 @@ class Answer:
     run: str
     map: str | None
     model: str
-    provider: str | None
     task: str
     location: str
     country: str
@@ -35,7 +34,6 @@ class Answer:
             run=str(entry.path),
             map=entry.map,
             model=entry.run.setup.model,
-            provider=entry.board.get("provider"),
             task=trial.task,
             location=round["id"],
             country=round["country"],

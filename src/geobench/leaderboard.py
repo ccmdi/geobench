@@ -6,7 +6,8 @@ from enum import StrEnum
 from pathlib import Path, PurePosixPath
 from typing import Any, Self
 
-from shungite.report import Result, Run
+from geobench.catalog import Catalog
+from shungite.report import Prices, Result, Run
 
 
 class Status(StrEnum):
@@ -44,12 +45,26 @@ class Entry:
         return self.config["env"]["taskset"].get("map")
 
     @property
-    def board(self) -> dict[str, Any]:
-        return self.config.get("board", {})
+    def sampling(self) -> dict[str, Any]:
+        return self.config.get("sampling") or {}
 
-    def as_json(self) -> dict[str, Any]:
+    @property
+    def effort(self) -> str | None:
+        return self.sampling.get("reasoning_effort")
+
+    @property
+    def thinking(self) -> bool:
+        return self.effort is not None or (self.sampling.get("thinking") or {}).get("type") == "enabled"
+
+    @property
+    def search(self) -> bool:
+        return any("google_search" in tool for tool in self.sampling.get("tools", []))
+
+    def as_json(self, catalog: Catalog) -> dict[str, Any]:
         result = Result(self.run.setup, (self.run,))
         measures = result.measures
+        model = catalog[result.setup.model]
+        tokens, cost = result.bill(Prices(model=model.price))["model"]
 
         def measure(name: str, statistic: str) -> float | None:
             return getattr(measures[name], statistic) if name in measures else None
@@ -58,9 +73,15 @@ class Entry:
             "run": str(self.path),
             "status": self.status,
             "map": self.map,
-            "model": result.setup.model,
-            "provider": self.board.get("provider"),
-            "deprecated": self.board.get("deprecated", False),
+            "model": model.id,
+            "name": model.name,
+            "lab": model.lab,
+            "lab_name": model.lab_name,
+            "released": model.released,
+            "deprecated": model.deprecated,
+            "thinking": self.thinking,
+            "effort": self.effort,
+            "search": self.search,
             "date": next(iter(result.run_dates), None),
             "n": len(result.items),
             "country_success_rate": result.pass_rate,
@@ -69,11 +90,14 @@ class Entry:
             "average_score": measure("points", "mean"),
             "median_distance_km": measure("distance_km", "median"),
             "median_score": measure("points", "median"),
+            "input_tokens": None if tokens is None else tokens.input,
+            "output_tokens": None if tokens is None else tokens.output,
+            "cost": cost,
         }
 
 
-def leaderboard(root: Path) -> dict[str, Any]:
-    entries = [Entry.read(root, dir).as_json() for dir in run_dirs(root)]
+def leaderboard(root: Path, catalog: Catalog) -> dict[str, Any]:
+    entries = [Entry.read(root, dir).as_json(catalog) for dir in run_dirs(root)]
     return {"runs": sorted(entries, key=lambda e: (e["map"] or "", e["model"], e["run"]))}
 
 
@@ -85,7 +109,7 @@ def main() -> None:
     parser.add_argument("root", type=Path, help="responses folder")
     parser.add_argument("output", type=Path, help="JSON file to write")
     args = parser.parse_args()
-    args.output.write_text(json.dumps(leaderboard(args.root), indent=2) + "\n", "utf-8")
+    args.output.write_text(json.dumps(leaderboard(args.root, Catalog.fetch()), indent=2) + "\n", "utf-8")
 
 
 if __name__ == "__main__":

@@ -267,10 +267,10 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const answers = __ANSWERS__;
-        const COLORS = {Anthropic: "#FF7F50", Google: "#4285F4", OpenAI: "#858585", Meta: "#add4ed", Mistral: "#FFDE59", Alibaba: "#ffd796"};
+        const COLORS = {anthropic: "#FF7F50", google: "#4285F4", openai: "#858585", meta: "#add4ed", mistral: "#FFDE59", alibaba: "#ffd796"};
         const ARROWS = {ArrowLeft: -1, ArrowRight: 1};
-        const company = a => a.provider ?? "Other";
-        const color = a => COLORS[a.provider] ?? "#A020F0";
+        const company = a => a.model.split("/")[0];
+        const color = a => COLORS[company(a)] ?? "#A020F0";
         const $ = id => document.getElementById(id);
 
         const locations = new Map();

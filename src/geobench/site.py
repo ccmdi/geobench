@@ -8,11 +8,12 @@ from statistics import fmean, mode
 from typing import Any
 
 from geobench.answers import Answer, answers
+from geobench.catalog import Catalog
 from geobench.leaderboard import Status, leaderboard
 from shungite.country import place_name
 from shungite.report import average
 
-DIGITS = {"rate": 3, "score": 2, "km": 1}
+DIGITS = {"rate": 3, "score": 2, "km": 1, "cost": 4, "tokens": 0}
 
 
 def rounded(value: Any, digits: int | None = None) -> Any:
@@ -44,8 +45,8 @@ def breakdown(rows: Iterable[Answer]) -> dict[str, Any]:
     }
 
 
-def site(root: Path) -> dict[str, Any]:
-    public = [{key: value for key, value in run.items() if key != "status"} for run in leaderboard(root)["runs"] if run["status"] is Status.PUBLIC]
+def site(root: Path, catalog: Catalog) -> dict[str, Any]:
+    public = [{key: value for key, value in run.items() if key != "status"} for run in leaderboard(root, catalog)["runs"] if run["status"] is Status.PUBLIC]
     rows = {run: list(group) for run, group in groupby(answers(root), key=lambda answer: answer.run)}
     return rounded({
         "maps": [{"id": map, "n": mode(run["n"] for run in group)} for map, group in groupby(public, key=itemgetter("map"))],
@@ -61,7 +62,7 @@ def main() -> None:
     parser.add_argument("root", type=Path, help="responses folder")
     parser.add_argument("output", type=Path, help="JSON file to write")
     args = parser.parse_args()
-    args.output.write_text(json.dumps(site(args.root), ensure_ascii=False, separators=(",", ":")) + "\n", "utf-8")
+    args.output.write_text(json.dumps(site(args.root, Catalog.fetch()), ensure_ascii=False, separators=(",", ":")) + "\n", "utf-8")
 
 
 if __name__ == "__main__":

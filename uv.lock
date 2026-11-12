@@ -751,6 +751,7 @@ name = "geobench"
 version = "0.2.0"
 source = { editable = "." }
 dependencies = [
+    { name = "httpx" },
     { name = "shungite" },
     { name = "verifiers" },
 ]
@@ -758,7 +759,6 @@ dependencies = [
 [package.optional-dependencies]
 build = [
     { name = "charoite" },
-    { name = "httpx" },
     { name = "python-dotenv" },
 ]
 viz = [
@@ -779,7 +779,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "charoite", marker = "extra == 'build'", editable = "packages/charoite" },
-    { name = "httpx", marker = "extra == 'build'" },
+    { name = "httpx" },
     { name = "matplotlib", marker = "extra == 'viz'" },
     { name = "pandas", marker = "extra == 'viz'" },
     { name = "python-dotenv", marker = "extra == 'build'" },
