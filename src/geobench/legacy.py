@@ -54,6 +54,18 @@ class Row:
         )
 
 
+def provider_usage(response: dict[str, Any]) -> dict[str, int] | None:
+    if gemini := response.get("usageMetadata"):
+        return {"prompt_tokens": gemini["promptTokenCount"], "completion_tokens": gemini.get("candidatesTokenCount", 0) + gemini.get("thoughtsTokenCount", 0)}
+    spent = response.get("usage")
+    if not spent:
+        return None
+    if "prompt_tokens" in spent:
+        return {"prompt_tokens": spent["prompt_tokens"], "completion_tokens": spent["completion_tokens"]}
+    cached = (spent.get("cache_read_input_tokens") or 0) + (spent.get("cache_creation_input_tokens") or 0)
+    return {"prompt_tokens": spent["input_tokens"] + cached, "completion_tokens": spent["output_tokens"]}
+
+
 @dataclass(frozen=True)
 class LegacyRun:
     dir: Path
@@ -120,6 +132,10 @@ class LegacyRun:
         output = self.dir / "output" / f"{row.id}.txt"
         return output.read_text("utf-8") if output.is_file() else None
 
+    def usage(self, row: Row) -> dict[str, int] | None:
+        raw = self.dir / "json" / f"{row.id}.json"
+        return provider_usage(json.loads(raw.read_bytes().decode("utf-8", "replace"))) if raw.is_file() else None
+
     @property
     def episodes(self) -> list[dict[str, Any]]:
         started = datetime.strptime(self.folder["started"], STARTED).replace(tzinfo=UTC).timestamp()
@@ -133,6 +149,7 @@ class LegacyRun:
                 "nodes": [] if reply is None else [{"message": {"role": "assistant", "content": reply}, "sampled": True}],
                 "info": {"items": {row.id: row.item.model_dump()}},
                 "timing": {"start": started},
+                **({"usage": spent} if (spent := self.usage(row)) else {}),
             }
             episodes.append({"task": task, "traces": [trace]})
         return episodes

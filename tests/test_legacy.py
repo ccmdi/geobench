@@ -141,3 +141,24 @@ def test_a_runs_sampling_says_whether_it_thought_and_searched(tmp_path: Path, sa
     shown = Entry.read(tmp_path, dir).as_json(CATALOG)
     assert (shown["thinking"], shown["effort"], shown["search"]) == (thinking, effort, search)
 
+
+@pytest.mark.parametrize(
+    ("reply", "spent"),
+    [
+        ({"usage": {"input_tokens": 10, "cache_read_input_tokens": 5, "cache_creation_input_tokens": 1, "output_tokens": 7}}, (16, 7)),
+        ({"usage": {"input_tokens": 10, "output_tokens": 7, "total_tokens": 17}}, (10, 7)),
+        ({"usage": {"prompt_tokens": 10, "completion_tokens": 7}}, (10, 7)),
+        ({"usageMetadata": {"promptTokenCount": 10, "candidatesTokenCount": 3, "thoughtsTokenCount": 4}}, (10, 7)),
+    ],
+)
+def test_saved_provider_replies_give_each_trace_its_tokens_and_the_run_its_cost(tmp_path: Path, reply: dict[str, Any], spent: tuple[int, int]) -> None:
+    dir = write_old_run(tmp_path / f"Lab Model 1_{MAP}_2025-05-22T12_52_37", [*ANSWERED, REFUSED], SUMMARY)
+    (dir / "json").mkdir()
+    for row in ANSWERED:
+        (dir / "json" / f"{row[0]}.json").write_text(json.dumps(reply))
+    LegacyRun(dir, tmp_path).write()
+    shown = Entry.read(tmp_path, dir).as_json(CATALOG)
+    tokens = (3 * spent[0], 3 * spent[1])
+    assert (shown["input_tokens"], shown["output_tokens"]) == tokens
+    assert isclose(shown["cost"], (tokens[0] * 2 + tokens[1] * 8) / 1_000_000)
+
