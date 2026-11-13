@@ -1,4 +1,6 @@
-const DEFAULTS = { view: "map", rows: "location", by: "run", metric: "points", sort: "-spread", q: "", shelf: "", map: "", lab: "", round: "", order: "number", scope: "all" };
+import { brand } from "./color.js";
+
+const DEFAULTS = { view: "map", rows: "location", by: "run", metric: "points", sort: "-spread", q: "", shelf: "", map: "", lab: "", round: "", order: "number", scope: "all", focus: "" };
 
 export function readState() {
   const params = new URLSearchParams(location.hash.slice(1));
@@ -52,13 +54,17 @@ export function runLabels(selected) {
   return new Map(selected.map((card) => [card.run, parts.get(card.run).length ? `${card.name} (${parts.get(card.run).join(", ")})` : card.name]));
 }
 
+function carded(axis) {
+  return { ...axis, key: (a) => axis.pick(a.card) };
+}
+
 export const AXES = {
   location: { name: "Round", key: (a) => a.task, label: (a) => `#${a.location}`, place: (a) => a.place },
   country: { name: "Country", key: (a) => a.place.name, label: (a) => a.place.name, place: (a) => a.place },
-  map: { name: "Map", key: (a) => a.map, label: (a) => a.map },
-  run: { name: "Run", key: (a) => a.run, label: (a, labels) => labels.get(a.run) },
-  model: { name: "Model", key: (a) => a.model, label: (a) => a.card.name },
-  lab: { name: "Lab", key: (a) => a.card.lab, label: (a) => a.card.lab_name },
+  map: carded({ name: "Map", pick: (card) => card.map, label: (a) => a.map }),
+  run: carded({ name: "Run", pick: (card) => card.run, label: (a, labels) => labels.get(a.run) }),
+  model: carded({ name: "Model", pick: (card) => card.model, label: (a) => a.card.name }),
+  lab: carded({ name: "Lab", pick: (card) => card.lab, label: (a) => a.card.lab_name, brand }),
 };
 
 export const ROWS = ["location", "country", "map", "model", "lab", "run"];

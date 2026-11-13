@@ -162,7 +162,7 @@ export function runsView(ctx, view) {
       h("table", { class: "runs" },
         h("thead", null, h("tr", null, h("th"), ctx.runs.map(({ card }, i) =>
           h("th", { title: card.run },
-            h("span", { class: "column" }, swatch(ctx.runColor(i)), ctx.labels.get(card.run)),
+            h("span", { class: "column" }, swatch(ctx.cardColor(card)), ctx.labels.get(card.run)),
             h("button", { class: "remove", title: "Remove", onclick: () => writeState({ runs: ctx.state.runs.filter((run) => run !== card.run) }) }, "×"),
           )),
         )),

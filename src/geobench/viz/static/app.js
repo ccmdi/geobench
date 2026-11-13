@@ -1,3 +1,4 @@
+import { painter } from "./color.js";
 import { AXES, SERIES, cards as listing, groups, load, readState, rounds, runLabels, writeState } from "./data.js";
 import { fill, h, select, swatch } from "./dom.js";
 import { mapView } from "./map.js";
@@ -11,7 +12,6 @@ const VIEWS = {
   runs: { name: "Runs", render: runsView, controls: () => [] },
 };
 const SHELVES = [["", "All"], ["public", "Public"], ["hidden", "Hidden"], ["incomplete", "Incomplete"]];
-const PALETTE = 8;
 
 const $ = (id) => document.getElementById(id);
 let turn = 0;
@@ -25,11 +25,6 @@ function showPanel(shown) {
 
 function seriesControl(state) {
   return h("label", null, "Color by", select(state.by, SERIES.map((key) => [key, AXES[key].name]), (by) => writeState({ by })));
-}
-
-function palette() {
-  const css = getComputedStyle(document.documentElement);
-  return (i) => css.getPropertyValue(i < PALETTE ? `--s${i + 1}` : "--other").trim();
 }
 
 function haystack(card) {
@@ -46,7 +41,7 @@ function toggle(state, run) {
   writeState({ runs: state.runs.includes(run) ? state.runs.filter((r) => r !== run) : [...state.runs, run] });
 }
 
-function renderFinder(state, cards, color) {
+function renderFinder(state, cards, paint) {
   const all = [...cards.values()];
   const search = $("search");
   if (search.value !== state.q) search.value = state.q;
@@ -66,7 +61,7 @@ function renderFinder(state, cards, color) {
     picked.length
       ? h("div", { class: "picked-head" }, h("h2", null, `${picked.length} selected`), h("button", { class: "link", onclick: () => writeState({ runs: [], round: "" }) }, "Clear"))
       : null,
-    h("ul", { class: "picked" }, picked.map((card, i) => h("li", { title: card.run }, swatch(color(i)), h("span", { class: "grow" }, labels.get(card.run)), h("button", { class: "remove", title: "Remove", onclick: () => toggle(state, card.run) }, "×")))),
+    h("ul", { class: "picked", "data-scroll": "picked" }, picked.map((card) => h("li", { title: card.run }, swatch(paint(card)), h("span", { class: "grow" }, labels.get(card.run)), h("button", { class: "remove", title: "Remove", onclick: () => toggle(state, card.run) }, "×")))),
   );
   const fresh = shown.filter((card) => !state.runs.includes(card.run));
   fill(
@@ -79,7 +74,7 @@ function renderFinder(state, cards, color) {
       const index = state.runs.indexOf(card.run);
       return h("li", null,
         h("button", { class: "run", "aria-pressed": String(index >= 0), title: card.run, onclick: () => toggle(state, card.run) },
-          index >= 0 ? swatch(color(index)) : h("span", { class: "swatch empty" }),
+          index >= 0 ? swatch(paint(card)) : h("span", { class: "swatch empty" }),
           h("span", { class: "run-text" },
             h("span", { class: "run-name" }, card.name, card.effort ? h("span", { class: "tag" }, card.effort) : card.thinking ? h("span", { class: "tag" }, "thinking") : null, card.search ? h("span", { class: "tag" }, "search") : null),
             h("span", { class: "run-meta" }, h("span", null, card.map), h("span", null, card.started.slice(0, 10)), card.status === "public" ? null : h("span", { class: `shelf ${card.status}` }, card.status)),
@@ -104,8 +99,10 @@ async function render() {
   const mine = ++turn;
   const state = readState();
   const cards = await listing;
-  const color = palette();
-  renderFinder(state, cards, color);
+  const axis = AXES[state.by];
+  const paint = painter(axis, cards);
+  const cardColor = (card) => paint(axis.pick(card));
+  renderFinder(state, cards, cardColor);
   renderTabs(state);
   const selected = state.runs.map((run) => cards.get(run)).filter(Boolean);
   const view = $("view");
@@ -128,10 +125,8 @@ async function render() {
   if (mine !== turn) return;
   const answers = runs.flatMap((run) => run.answers);
   const labels = runLabels(selected);
-  const axis = AXES[state.by];
-  const series = groups(answers, axis, labels).map((s, i) => ({ ...s, color: color(i) }));
-  const colors = new Map(series.map((s) => [s.key, s.color]));
-  const ctx = { state, cards, selected, runs, answers, labels, series, rounds: rounds(answers, state.order, labels), color: (key) => colors.get(key), tint: (a) => colors.get(axis.key(a)), runColor: color };
+  const series = groups(answers, axis, labels).map((s) => ({ ...s, color: paint(s.key) }));
+  const ctx = { state, cards, selected, runs, answers, labels, series, rounds: rounds(answers, state.order, labels), color: paint, tint: (a) => paint(axis.key(a)), cardColor };
   latest = ctx;
   const current = VIEWS[state.view] ?? VIEWS.map;
   $("controls").replaceChildren(h("div", { class: "control-row" }, current.controls(state)), h("div", { class: "legend" }, renderLegend(ctx)));

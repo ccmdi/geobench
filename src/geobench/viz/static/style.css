@@ -11,15 +11,7 @@
   --seq: #2a78d6;
   --hit: #0f7a3d;
   --miss: #b23a3a;
-  --s1: #2a78d6;
-  --s2: #eb6834;
-  --s3: #1baf7a;
-  --s4: #eda100;
-  --s5: #e87ba4;
-  --s6: #008300;
-  --s7: #6250d6;
-  --s8: #e34948;
-  --other: #9aa5ab;
+  --warn: #a86a00;
   --sans: "Barlow", system-ui, sans-serif;
   --narrow: "Barlow Semi Condensed", "Barlow", system-ui, sans-serif;
 }
@@ -38,15 +30,7 @@
     --seq: #3987e5;
     --hit: #4cc27f;
     --miss: #e66767;
-    --s1: #3987e5;
-    --s2: #d95926;
-    --s3: #199e70;
-    --s4: #c98500;
-    --s5: #d55181;
-    --s6: #008300;
-    --s7: #9085e9;
-    --s8: #e66767;
-    --other: #67757d;
+    --warn: #d69e2e;
   }
 }
 
@@ -180,7 +164,7 @@ select {
   font-weight: 500;
 }
 
-.shelf.hidden { color: var(--s4); }
+.shelf.hidden { color: var(--warn); }
 
 .shelf.incomplete { color: var(--miss); }
 
