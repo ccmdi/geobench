@@ -222,3 +222,14 @@ def test_traces_split_only_on_newlines(tmp_path: Path) -> None:
     write_run(dir, [line])
     (dir / "traces.jsonl").write_text(json.dumps({"traces": [line]}, ensure_ascii=False) + "\n", "utf-8")
     assert len(report(dir).results[0].trials) == 1
+
+
+def test_a_trial_keeps_its_last_reply_and_reasoning(tmp_path: Path) -> None:
+    said = [
+        {"message": {"role": "user", "content": "image"}},
+        {"message": {"role": "assistant", "content": "first"}},
+        {"message": {"role": "assistant", "content": "country: Kenya", "reasoning_content": "red soil"}},
+    ]
+    [replied, silent] = report(write_run(tmp_path, [trace("a", {"1": P}) | {"nodes": said}, trace("b", {"1": F})])).results[0].trials
+    assert (replied.reply, replied.reasoning) == ("country: Kenya", "red soil")
+    assert (silent.reply, silent.reasoning) == (None, None)

@@ -89,12 +89,16 @@ class Trial:
     judge: Tokens | None
     start: float | None
     end: float | None
+    reply: str | None
+    reasoning: str | None
 
     @classmethod
     def parse(cls, trace: dict[str, Any]) -> Self:
         timing = trace.get("timing", {})
         items = trace["info"].get("items")
         ends = [span["end"] for span in timing.values() if isinstance(span, dict) and span.get("end")]
+        said = [node["message"] for node in trace.get("nodes", []) if node["message"]["role"] == "assistant"]
+        last = said[-1] if said else {}
         return cls(
             data=trace["task"]["data"],
             items=None if items is None else {key: Item.model_validate(item) for key, item in items.items()},
@@ -102,6 +106,8 @@ class Trial:
             judge=Tokens.total(trace["extra_usage"]) if "extra_usage" in trace else None,
             start=timing.get("start"),
             end=max(ends, default=None),
+            reply=last.get("content"),
+            reasoning=last.get("reasoning_content"),
         )
 
     @property
