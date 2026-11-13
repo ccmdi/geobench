@@ -18,14 +18,6 @@ geobench = "geobench.launch:main"
 dataset = "geobench.build:main"
 viz = "geobench.viz:main"
 
-[project.optional-dependencies]
-viz = [
-    "matplotlib",
-    "pandas",
-    "seaborn",
-    "streamlit",
-]
-
 [dependency-groups]
 dev = ["shungite[testing]", "pytest", "pytest-asyncio"]
 

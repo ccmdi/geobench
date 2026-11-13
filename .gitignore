@@ -22,10 +22,6 @@ build/
 dataset/
 responses/
 
-# Visualizations output
-visualizations/*.csv
-visualizations/*/visualization.html
-
 .pytest_cache/
 
 # IDE
