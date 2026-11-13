@@ -9,9 +9,9 @@ from math import isclose
 from pathlib import Path
 from typing import Any
 
-from geobench.round import MAX_POINTS, Round
+from geobench.round import MAX_POINTS, Bounds, Round
 from geobench.taskset import GeoTasksetConfig
-from shungite import Bounds, Coordinates, Guess, Item
+from shungite import Coordinates, Guess, Item
 from shungite.report import Median
 
 FOLDER = re.compile(r"(?P<model>.+)_(?P<map>[^_]+)_(?P<started>\d{4}-\d\d-\d\dT\d\d_\d\d_\d\d)")

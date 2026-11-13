@@ -3,8 +3,46 @@ import verifiers.v1 as vf
 from conftest import MAP, final, replied
 from haversine import Direction, inverse_haversine
 
+from geobench.round import geoguessr
 from geobench.taskset import GeoTask
 from shungite import Coordinates
+
+SCALES = {
+    "acw": 2485.084631421639,
+    "avw": 2485.810918492928,
+    "ext-urban": 1873.6252126849456,
+    "geoguessr-2069": 1857.783934490492,
+    "rural-world": 1992.0045023950618,
+}
+
+
+@pytest.mark.parametrize(
+    ("map", "km", "expected"),
+    [
+        ("acw", 1204.3488020420805, 2611),
+        ("acw", 820.3581972416703, 3212),
+        ("acw", 692.1338884349159, 3442),
+        ("rural-world", 922.7271975694032, 2687),
+        ("rural-world", 90.21220927427461, 4705),
+        ("ext-urban", 1.8132782935287581, 4994),
+        ("ext-urban", 221.39521552250372, 4267),
+        ("avw", 22.0058341522011, 4941),
+        ("avw", 1049.566129881136, 2839),
+        ("geoguessr-2069", 4.086764860149058, 4985),
+        ("geoguessr-2069", 1374.6369352585073, 1854),
+    ],
+)
+def test_the_curve_matches_scores_geoguessr_gave(map: str, km: float, expected: int) -> None:
+    assert geoguessr(SCALES[map])(km) == float(expected)
+
+
+def test_within_25_metres_is_perfect() -> None:
+    score = geoguessr(1.0)
+    assert score(0.0) == 5000.0
+    assert score(0.025) == 5000.0
+    assert score(0.026) == float(round(5000 * 0.99866017**26))
+    assert geoguessr(SCALES["acw"])(0.04336056466641199) == 5000.0
+
 
 def offset(point: Coordinates, km: float) -> Coordinates:
     lat, lng = inverse_haversine((point.lat, point.lng), km, Direction.NORTH)

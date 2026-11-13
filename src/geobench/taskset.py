@@ -5,8 +5,7 @@ from pathlib import Path
 import verifiers.v1 as vf
 
 from geobench.prompt import user_message
-from geobench.round import Round
-from shungite import Bounds
+from geobench.round import Bounds, Round
 
 
 class RoundData(vf.TaskData):

@@ -19,11 +19,3 @@ class Bands:
 
 def bands(*steps: tuple[float, float]) -> Bands:
     return Bands(steps)
-
-
-def geoguessr(scale: float) -> Score:
-    def score(km: float) -> float:
-        meters = km / 1000 * 1_000_000
-        return 5000.0 if meters <= 25 else float(round(5000 * 0.99866017 ** (meters / scale)))
-
-    return score

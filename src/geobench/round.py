@@ -4,9 +4,29 @@ from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict
 
-from shungite import Bounds, Coordinates, Guess, Item, geoguessr, read_guess, same_country
+from shungite import Coordinates, Guess, Item, Score, read_guess, same_country
 
 MAX_POINTS = 5000.0
+DIAGONAL_TO_SCALE = 7.458421
+
+
+class Bounds(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    min: Coordinates
+    max: Coordinates
+
+    @property
+    def scale(self) -> float:
+        return self.min.km_to(self.max) / DIAGONAL_TO_SCALE
+
+
+def geoguessr(scale: float) -> Score:
+    def score(km: float) -> float:
+        meters = km / 1000 * 1_000_000
+        return MAX_POINTS if meters <= 25 else float(round(MAX_POINTS * 0.99866017 ** (meters / scale)))
+
+    return score
 
 
 class Round(BaseModel):
