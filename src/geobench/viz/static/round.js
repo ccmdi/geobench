@@ -57,7 +57,8 @@ function runCard(ctx) {
 }
 
 function guessRow(ctx, answer) {
-  return h("li", null,
+  const focused = answer.run === ctx.state.focus;
+  return h("li", { class: focused ? "focused" : null },
     h("div", { class: "standing" },
       swatch(ctx.tint(answer)),
       h("span", { class: "grow" }, focus(answer.run, ctx.labels.get(answer.run))),
@@ -66,7 +67,7 @@ function guessRow(ctx, answer) {
       h("span", { class: `num points ${answer.passed ? "hit" : "miss"}` }, fmt.int(answer.points)),
     ),
     answer.reasoning ? h("details", null, h("summary", null, "Reasoning"), h("pre", null, answer.reasoning)) : null,
-    answer.reply ? h("details", null, h("summary", null, "Reply"), h("pre", null, answer.reply)) : answer.error ? h("p", { class: "muted" }, answer.error) : null,
+    answer.reply ? h("details", { open: focused }, h("summary", null, "Reply"), h("pre", null, answer.reply)) : answer.error ? h("p", { class: "muted" }, answer.error) : null,
   );
 }
 
@@ -129,5 +130,6 @@ export function roundPanel(ctx, panel) {
     h("ol", { class: "standings" }, active ? active.answers.toSorted((a, b) => (b.points ?? -1) - (a.points ?? -1)).map((a) => guessRow(ctx, a)) : table.toSorted((a, b) => (b.score ?? -1) - (a.score ?? -1)).map((s) => seriesRow(ctx, s))),
   );
   reveal(panel.querySelector(".round-cell[aria-current]"));
+  panel.querySelector(".standings .focused")?.scrollIntoView({ block: "nearest" });
   if (active) preload(ctx);
 }

@@ -397,6 +397,8 @@ table { border-collapse: collapse; }
 
 .standings li { padding: 12px 0; border-bottom: 1px solid var(--rule); }
 
+.standings li.focused { margin: 0 -10px; padding: 12px 10px; border-radius: 8px; background: var(--paper); }
+
 .standing { display: flex; align-items: center; gap: 14px; }
 
 .standing .swatch { margin-right: 0; }

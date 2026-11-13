@@ -55,7 +55,7 @@ export function mapView(ctx, view) {
       from: [a.lng, a.lat],
       at: [nearest(a.guess_lng, a.lng), a.guess_lat],
       color: [...rgb(ctx.tint(a)), !focus || a.run === focus ? 230 : 50],
-      open: () => writeState({ focus: a.run }),
+      open: () => writeState({ round: a.task, focus: a.run }, { push: true }),
       tip: () => tip([
         h("strong", null, ctx.labels.get(a.run)),
         h("span", { class: "tip-line" }, flag(a.guess_place), a.guess_place?.name ?? "No country"),
