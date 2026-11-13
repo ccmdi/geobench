@@ -39,12 +39,14 @@ class Graded:
     location: str
     truth: dict[str, Any]
     item: Item
+    reply: str | None = None
+    reasoning: str | None = None
 
     def trace(self, map: str, usage: dict[str, int] | None) -> dict[str, Any]:
         round = {"id": self.location, "country": self.truth["country"], "location": {"lat": self.truth["lat"], "lng": self.truth["lng"]}}
         return {
             "task": {"type": "GeoTask", "data": {"id": f"{map}/{self.location}", "round": round}},
-            "nodes": [],
+            "nodes": [] if self.reply is None else [{"message": {"role": "assistant", "content": self.reply, "reasoning_content": self.reasoning}}],
             "info": {"items": {self.location: self.item.model_dump()}},
             "timing": {"start": STARTED},
             **({} if usage is None else {"usage": usage}),
