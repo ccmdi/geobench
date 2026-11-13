@@ -1,0 +1,116 @@
+const DEFAULTS = { view: "map", rows: "location", by: "run", metric: "points", sort: "-spread", q: "", shelf: "", map: "", lab: "", loc: "" };
+
+export function readState() {
+  const params = new URLSearchParams(location.hash.slice(1));
+  return { ...Object.fromEntries(Object.entries(DEFAULTS).map(([key, value]) => [key, params.get(key) ?? value])), runs: params.getAll("run") };
+}
+
+export function writeState(patch, { push = false } = {}) {
+  const next = { ...readState(), ...patch };
+  const params = new URLSearchParams(next.runs.map((run) => ["run", run]));
+  for (const [key, value] of Object.entries(DEFAULTS)) if (next[key] !== value) params.set(key, next[key]);
+  history[push ? "pushState" : "replaceState"](null, "", `#${params}`);
+  dispatchEvent(new HashChangeEvent("hashchange"));
+}
+
+const json = (url) => fetch(url).then((response) => (response.ok ? response.json() : response.text().then((text) => Promise.reject(new Error(text)))));
+
+export const cards = json("/api/runs").then((list) => new Map(list.map((card) => [card.run, card])));
+
+const loads = new Map();
+
+export function load(card) {
+  if (!loads.has(card.run)) {
+    const loading = json(`/api/run?run=${encodeURIComponent(card.run)}`).then(({ summary, answers }) => ({
+      card,
+      summary,
+      answers: answers.map((answer) => ({ ...answer, card })),
+    }));
+    loads.set(card.run, loading.catch((error) => (loads.delete(card.run), Promise.reject(error))));
+  }
+  return loads.get(card.run);
+}
+
+export function imageUrl(answer) {
+  return `/api/image?${new URLSearchParams({ map: answer.map, location: answer.location })}`;
+}
+
+export function runLabels(selected) {
+  const base = (card) =>
+    [card.name, card.effort ? `(${card.effort})` : card.thinking ? "(thinking)" : null, card.search ? "+ search" : null, new Set(selected.map((c) => c.map)).size > 1 ? `on ${card.map}` : null]
+      .filter(Boolean)
+      .join(" ");
+  const counts = Map.groupBy(selected, base);
+  return new Map(selected.map((card) => [card.run, counts.get(base(card)).length > 1 ? `${base(card)} ${card.started.slice(0, 10)}` : base(card)]));
+}
+
+export const AXES = {
+  location: { name: "Location", key: (a) => a.task, label: (a) => `#${a.location} ${a.place}` },
+  country: { name: "Country", key: (a) => a.place, label: (a) => a.place },
+  map: { name: "Map", key: (a) => a.map, label: (a) => a.map },
+  run: { name: "Run", key: (a) => a.run, label: (a, labels) => labels.get(a.run) },
+  model: { name: "Model", key: (a) => a.model, label: (a) => a.card.name },
+  lab: { name: "Lab", key: (a) => a.card.lab, label: (a) => a.card.lab_name },
+};
+
+export const ROWS = ["location", "country", "map", "model", "lab", "run"];
+export const SERIES = ["run", "model", "lab", "map"];
+
+const LOG_KM = Math.log10(20001);
+
+export const fmt = {
+  int: (v) => (v == null ? "-" : Math.round(v).toLocaleString("en-US")),
+  km: (v) => (v == null ? "-" : `${v < 10 ? v.toFixed(1) : Math.round(v).toLocaleString("en-US")} km`),
+  pct: (v) => (v == null ? "-" : `${(v * 100).toFixed(1)}%`),
+  coord: (lat, lng) => `${lat.toFixed(3)}, ${lng.toFixed(3)}`,
+  usd: (v) => (v == null ? "-" : `$${v.toFixed(v < 1 ? 3 : 2)}`),
+};
+
+export const METRICS = {
+  points: { name: "Score", value: (a) => a.points, format: fmt.int, goodness: (v) => v / 5000 },
+  km: { name: "Distance", value: (a) => a.distance_km, format: fmt.km, goodness: (v) => 1 - Math.log10(1 + v) / LOG_KM },
+  hit: { name: "Country", value: (a) => (a.passed ? 1 : 0), format: fmt.pct, goodness: (v) => v },
+};
+
+export function mean(values) {
+  const known = values.filter((v) => v != null);
+  return known.length ? known.reduce((sum, v) => sum + v, 0) / known.length : null;
+}
+
+export function groups(answers, axis, labels) {
+  const found = new Map();
+  for (const answer of answers) {
+    const key = axis.key(answer);
+    if (!found.has(key)) found.set(key, { key, label: axis.label(answer, labels), answers: [] });
+    found.get(key).answers.push(answer);
+  }
+  return [...found.values()];
+}
+
+export function pivot(answers, rows, series, metric, labels) {
+  const columns = groups(answers, series, labels);
+  const lines = groups(answers, rows, labels).map((row) => {
+    const bySeries = Map.groupBy(row.answers, series.key);
+    const cells = columns.map((column) => mean((bySeries.get(column.key) ?? []).map(metric.value)));
+    const known = cells.filter((v) => v != null);
+    return {
+      ...row,
+      cells,
+      n: new Set(row.answers.map((a) => a.task)).size,
+      mean: mean(known),
+      spread: known.length > 1 ? Math.max(...known) - Math.min(...known) : null,
+    };
+  });
+  return { columns, lines };
+}
+
+export function sorted(lines, sort) {
+  const field = sort.replace(/^-/, "");
+  const value = { label: (l) => l.label, n: (l) => l.n, mean: (l) => l.mean, spread: (l) => l.spread }[field] ?? ((l) => l.cells[Number(field.slice(1))]);
+  const sign = sort.startsWith("-") ? -1 : 1;
+  return lines.toSorted((a, b) => {
+    const [x, y] = [value(a), value(b)];
+    if (x == null || y == null) return (x == null) - (y == null);
+    return sign * (typeof x === "string" ? x.localeCompare(y, undefined, { numeric: true }) : x - y);
+  });
+}

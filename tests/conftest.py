@@ -74,8 +74,9 @@ def write_run(
     sampling: dict[str, Any] | None = None,
     median: Median = Median.HIGH,
     usage: dict[str, int] | None = None,
+    client: dict[str, Any] | None = None,
 ) -> Path:
-    config = {"env": {"taskset": {"id": "geobench", "map": map}}, "model": model, "sampling": sampling, "report": {"median": median}}
+    config = {"env": {"taskset": {"id": "geobench", "map": map}}, "model": model, "client": client, "sampling": sampling, "report": {"median": median}}
     (dir / "configs" / "resolved").mkdir(parents=True)
     (dir / "configs" / "resolved" / "run.json").write_text(json.dumps(config))
     (dir / "traces.jsonl").write_text("".join(json.dumps({"traces": [g.trace(map, usage)]}) + "\n" for g in graded))

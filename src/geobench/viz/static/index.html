@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GeoBench viewer</title>
+  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&display=swap">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <aside id="finder">
+    <h1>GeoBench</h1>
+    <input id="search" type="search" placeholder="Search runs" autocomplete="off" spellcheck="false">
+    <div id="facets"></div>
+    <div id="selected"></div>
+    <div id="results-head" class="results-head"></div>
+    <ol id="results"></ol>
+  </aside>
+  <main>
+    <nav id="tabs" role="tablist"></nav>
+    <div id="controls"></div>
+    <section id="view"></section>
+  </main>
+  <aside id="detail" hidden></aside>
+</body>
+</html>

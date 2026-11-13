@@ -16,6 +16,7 @@ dependencies = [
 [project.scripts]
 geobench = "geobench.launch:main"
 dataset = "geobench.build:main"
+viz = "geobench.viz:main"
 
 [project.optional-dependencies]
 viz = [

@@ -37,4 +37,4 @@ uv run dataset --num <n> --output <map> --map <geoguessr map id>
 This needs `NCFA` in `.env`. Instructions for setting it up can be found [here](https://github.com/EvickaStudio/GeoGuessr-API?tab=readme-ov-file#authentication).
 
 ## Compare guesses
-Run `uv run python main.py` from `visualizations/browser/`, then open the `visualization.html` it writes there to see every model's guess for each location.
+Run `uv run viz` to browse and compare runs' guesses in your browser.
