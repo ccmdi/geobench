@@ -7,7 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from geobench.catalog import Catalog
-from geobench.legacy import STARTED
+from geobench.leaderboard import STARTED
 from geobench.slim import Dataset
 from geobench.taskset import GeoTasksetConfig
 

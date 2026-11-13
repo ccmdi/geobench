@@ -1,18 +1,14 @@
 from pathlib import Path
 
-from conftest import IMAGES, MAP
-from test_legacy import ANSWERED, REFUSED, SUMMARY, write_old_run
+from conftest import IMAGES, MAP, write_run
 
 from geobench.answers import Answer, answers
-from geobench.legacy import LegacyRun
 
 
 def test_answers_flatten_each_listed_runs_items_with_their_truth(tmp_path: Path) -> None:
-    for shelf, model in ((".", "Lab Model 1"), (".hidden", "Lab Model 2")):
-        dir = write_old_run(tmp_path / shelf / f"{model}_{MAP}_2025-05-22T12_52_37", [*ANSWERED, REFUSED], SUMMARY | {"model": model})
-        LegacyRun(dir, tmp_path).write()
-    run = f"Lab Model 1_{MAP}_2025-05-22T12_52_37"
-    shared = {"run": run, "map": MAP, "model": "lab/model-1"}
+    for shelf, model in ((".", "lab/model-1"), (".hidden", "lab/model-2")):
+        write_run(tmp_path / shelf / f"{model.replace('/', '_')}_{MAP}_2025-05-22T12_52_37", model=model)
+    shared = {"run": f"lab_model-1_{MAP}_2025-05-22T12_52_37", "map": MAP, "model": "lab/model-1"}
     listed = list(answers(tmp_path))
     assert [answer.location for answer in listed] == ["1", "2", "3", "4"]
     assert [listed[0], listed[-1]] == [

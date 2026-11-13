@@ -4,10 +4,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from conftest import CATALOG, MAP
-from test_legacy import ANSWERED, REFUSED, SUMMARY, write_old_run
+from conftest import CATALOG, MAP, write_run
 
-from geobench.legacy import LegacyRun
 from geobench.site import site
 
 RUN = f"Lab Model 1_{MAP}_2025-05-22T12_52_37"
@@ -27,8 +25,8 @@ def keys(value: Any) -> Iterator[str]:
 
 @pytest.fixture
 def root(tmp_path: Path) -> Path:
-    for shelf, model in ((".", "Lab Model 1"), (".hidden", "Lab Model 3")):
-        LegacyRun(write_old_run(tmp_path / shelf / f"{model}_{MAP}_2025-05-22T12_52_37", [*ANSWERED, REFUSED], SUMMARY | {"model": model}), tmp_path).write()
+    for shelf, name in ((".", "Lab Model 1"), (".hidden", "Lab Model 3")):
+        write_run(tmp_path / shelf / f"{name}_{MAP}_2025-05-22T12_52_37")
     return tmp_path
 
 

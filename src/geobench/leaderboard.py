@@ -9,6 +9,8 @@ from typing import Any, Self
 from geobench.catalog import Catalog
 from shungite.report import Prices, Result, Run
 
+STARTED = "%Y-%m-%dT%H_%M_%S"
+
 
 class Status(StrEnum):
     PUBLIC = "public"
