@@ -124,7 +124,7 @@ export function scoresView(ctx, view) {
   );
 }
 
-const SETTINGS = [
+export const SETTINGS = [
   ["Model", (s) => s.model],
   ["Lab", (s) => s.lab_name],
   ["Provider", (s, card) => card.provider ?? "-"],
@@ -139,7 +139,7 @@ const SETTINGS = [
   ["Settings", (s, card) => Object.entries(card.settings).map(([key, value]) => h("div", null, `${key} ${typeof value === "string" ? value : JSON.stringify(value)}`))],
 ];
 
-const MEASURES = [
+export const MEASURES = [
   ["Locations", (s) => s.n],
   ["Average score", (s) => fmt.int(s.average_score)],
   ["Median score", (s) => fmt.int(s.median_score)],

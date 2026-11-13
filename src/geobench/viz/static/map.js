@@ -26,7 +26,12 @@ function tip(content) {
 function create() {
   map = new maplibregl.Map({ container: element, style: STYLES[dark.matches ? "dark" : "light"], center: [10, 20], zoom: 1.2, keyboard: false, attributionControl: { compact: true } });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
-  overlay = new MapboxOverlay({ interleaved: false, getTooltip: ({ object }) => object?.tip() });
+  overlay = new MapboxOverlay({
+    interleaved: false,
+    getTooltip: ({ object }) => object?.tip(),
+    onHover: ({ object }) => (map.getCanvas().style.cursor = object ? "pointer" : ""),
+    onClick: ({ object }) => object?.open(),
+  });
   map.addControl(overlay);
   dark.addEventListener("change", () => map.setStyle(STYLES[dark.matches ? "dark" : "light"]));
 }
@@ -37,32 +42,31 @@ export function mapView(ctx, view) {
   map.resize();
   const css = getComputedStyle(document.documentElement);
   const [ink, paper] = ["--ink", "--panel"].map((name) => rgb(css.getPropertyValue(name).trim()));
-  const round = ctx.state.round;
+  const { round, focus } = ctx.state;
   const shown = round ? ctx.answers.filter((a) => a.task === round) : ctx.answers;
   const truths = [...Map.groupBy(shown, (a) => a.task).values()].map(([a]) => ({
-    task: a.task,
     at: [a.lng, a.lat],
+    open: () => writeState({ round: a.task }, { push: true }),
     tip: () => tip([flag(a.place), h("strong", null, a.place.name), h("span", { class: "muted" }, ` #${a.location}`)]),
   }));
   const guesses = shown
     .filter((a) => a.guess_lat != null)
     .map((a) => ({
-      task: a.task,
       from: [a.lng, a.lat],
       at: [nearest(a.guess_lng, a.lng), a.guess_lat],
-      color: rgb(ctx.tint(a)),
+      color: [...rgb(ctx.tint(a)), !focus || a.run === focus ? 230 : 50],
+      open: () => writeState({ focus: a.run }),
       tip: () => tip([
         h("strong", null, ctx.labels.get(a.run)),
         h("span", { class: "tip-line" }, flag(a.guess_place), a.guess_place?.name ?? "No country"),
         h("span", { class: "tip-line num" }, `${fmt.int(a.points)} pts, ${fmt.km(a.distance_km)}`),
       ]),
     }));
-  const open = ({ object }) => object && writeState({ round: object.task }, { push: true });
   overlay.setProps({
     layers: [
-      new LineLayer({ id: "lines", data: guesses, pickable: true, getSourcePosition: (g) => g.from, getTargetPosition: (g) => g.at, getColor: (g) => [...g.color, 210], getWidth: round ? 3 : 1.5, widthUnits: "pixels", onClick: open }),
-      new ScatterplotLayer({ id: "guesses", data: guesses, pickable: true, getPosition: (g) => g.at, getFillColor: (g) => g.color, getLineColor: paper, stroked: true, lineWidthUnits: "pixels", getLineWidth: 1.5, radiusUnits: "pixels", getRadius: round ? 7 : 4.5, onClick: open }),
-      new ScatterplotLayer({ id: "truths", data: truths, pickable: true, getPosition: (t) => t.at, getFillColor: paper, getLineColor: ink, stroked: true, lineWidthUnits: "pixels", getLineWidth: 2.5, radiusUnits: "pixels", getRadius: round ? 9 : 5, onClick: open }),
+      new LineLayer({ id: "lines", data: guesses, pickable: true, getSourcePosition: (g) => g.from, getTargetPosition: (g) => g.at, getColor: (g) => g.color, getWidth: round ? 3 : 1.5, widthUnits: "pixels" }),
+      new ScatterplotLayer({ id: "guesses", data: guesses, pickable: true, getPosition: (g) => g.at, getFillColor: (g) => g.color, getLineColor: paper, stroked: true, lineWidthUnits: "pixels", getLineWidth: 1.5, radiusUnits: "pixels", getRadius: round ? 7 : 4.5 }),
+      new ScatterplotLayer({ id: "truths", data: truths, pickable: true, getPosition: (t) => t.at, getFillColor: paper, getLineColor: ink, stroked: true, lineWidthUnits: "pixels", getLineWidth: 2.5, radiusUnits: "pixels", getRadius: round ? 9 : 5 }),
     ],
   });
   const frame = round || ctx.selected.map((card) => card.run).join("|");

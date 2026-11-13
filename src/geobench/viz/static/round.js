@@ -1,5 +1,6 @@
 import { AXES, METRICS, ORDERS, fmt, groups, imageUrl, mean, standings, writeState } from "./data.js";
 import { fill, flag, h, reveal, select, swatch } from "./dom.js";
+import { MEASURES, SETTINGS } from "./views.js";
 
 function stat(name, value, title) {
   return h("div", null, h("dt", null, name), h("dd", { class: "num", title }, value));
@@ -17,11 +18,29 @@ export function step(ctx, by) {
   return order[(index + by + order.length) % order.length].key;
 }
 
+function focus(run, label) {
+  return h("button", { class: "run-link", title: run, onclick: () => writeState({ focus: run }) }, label);
+}
+
+function runCard(ctx) {
+  const run = ctx.runs.find(({ card }) => card.run === ctx.state.focus);
+  if (!run) return null;
+  const facts = (fields) => fields.map(([label, value]) => h("div", null, h("dt", null, label), h("dd", null, value(run.summary, run.card))));
+  return h("section", { class: "run-card" },
+    h("header", null,
+      swatch(ctx.cardColor(run.card)),
+      h("h3", { class: "grow", title: run.card.run }, ctx.labels.get(run.card.run)),
+      h("button", { class: "remove", title: "Close", onclick: () => writeState({ focus: "" }) }, "×"),
+    ),
+    h("dl", null, facts(SETTINGS), facts(MEASURES)),
+  );
+}
+
 function guessRow(ctx, answer) {
   return h("li", null,
     h("div", { class: "standing" },
       swatch(ctx.tint(answer)),
-      h("span", { class: "grow", title: answer.run }, ctx.labels.get(answer.run)),
+      h("span", { class: "grow" }, focus(answer.run, ctx.labels.get(answer.run))),
       answer.refused ? h("span", { class: "muted" }, "Refused") : flag(answer.guess_place, `${answer.guess_place?.name ?? "No country"}, ${answer.passed ? "right" : "wrong"} country`),
       h("span", { class: "num muted" }, fmt.km(answer.distance_km)),
       h("span", { class: `num points ${answer.passed ? "hit" : "miss"}` }, fmt.int(answer.points)),
@@ -31,11 +50,11 @@ function guessRow(ctx, answer) {
   );
 }
 
-function seriesRow(standing) {
+function seriesRow(ctx, standing) {
   return h("li", null,
     h("div", { class: "standing" },
       swatch(standing.color),
-      h("span", { class: "grow" }, standing.label),
+      h("span", { class: "grow" }, ctx.state.by === "run" ? focus(standing.key, standing.label) : standing.label),
       h("span", { class: "num muted", title: "Right country" }, `${standing.hits}/${standing.answers.length}`),
       h("span", { class: "num muted" }, fmt.km(standing.km)),
       h("span", { class: "num points" }, fmt.int(standing.score)),
@@ -66,6 +85,7 @@ export function roundPanel(ctx, panel) {
         h("button", { class: "chip", "aria-pressed": String(!active), title: "All rounds", onclick: () => go("") }, "All"),
       ),
     ),
+    runCard(ctx),
     h("div", { class: "round-order" }, select(state.order, Object.entries(ORDERS).map(([key, order]) => [key, order.name]), (order) => writeState({ order }))),
     h("ol", { class: "strip", "data-scroll": "strip" }, ctx.rounds.map((round) => {
       const first = round.answers[0];
@@ -86,7 +106,7 @@ export function roundPanel(ctx, panel) {
       stat("Country", `${scoped.filter((a) => a.passed).length}/${scoped.length}`),
     ),
     truth ? h("a", { class: "photo", href: imageUrl(truth), target: "_blank" }, h("img", { src: imageUrl(truth), alt: `Round ${truth.location}` })) : null,
-    h("ol", { class: "standings" }, active ? active.answers.toSorted((a, b) => (b.points ?? -1) - (a.points ?? -1)).map((a) => guessRow(ctx, a)) : table.toSorted((a, b) => (b.score ?? -1) - (a.score ?? -1)).map(seriesRow)),
+    h("ol", { class: "standings" }, active ? active.answers.toSorted((a, b) => (b.points ?? -1) - (a.points ?? -1)).map((a) => guessRow(ctx, a)) : table.toSorted((a, b) => (b.score ?? -1) - (a.score ?? -1)).map((s) => seriesRow(ctx, s))),
   );
   reveal(panel.querySelector(".round-cell[aria-current]"));
 }
