@@ -76,7 +76,7 @@ async def test_two_trials_per_round_report_pass_at_k_and_pass_hat_k(tmp_path: Pa
         capture_output=True, text=True, check=True,
     ).stdout.splitlines()
     *row, _date = report[4].split(" | ")
-    assert row == ["fake-model (max_tokens 32000, temperature 0.4)", "2", "50.0%", "0.0%", "$6.00", "0.750 (0.500-1.000)", "100.0%", "2"]
+    assert row == ["fake-model (max_tokens 32000)", "2", "50.0%", "0.0%", "$6.00", "0.750 (0.500-1.000)", "100.0%", "2"]
     assert f"{MAP}/1 | 1 | - | 1, 1 | 1/2" in report
     assert f"{MAP}/2 | 2 | - | 1, 0 | 1/2" in report
     assert "Model input tokens | 4 | 1.0" in report

@@ -9,13 +9,15 @@ dependencies = [
     "verifiers==0.4.2.dev11",
     "shungite",
     "httpx",
+    "python-dotenv",
+    "charoite",
 ]
 
+[project.scripts]
+geobench = "geobench.launch:main"
+dataset = "geobench.build:main"
+
 [project.optional-dependencies]
-build = [
-    "charoite",
-    "python-dotenv",
-]
 viz = [
     "matplotlib",
     "pandas",
@@ -24,7 +26,7 @@ viz = [
 ]
 
 [dependency-groups]
-dev = ["charoite", "shungite[testing]", "pytest", "pytest-asyncio"]
+dev = ["shungite[testing]", "pytest", "pytest-asyncio"]
 
 [tool.uv.sources]
 shungite = { path = "packages/shungite", editable = true }

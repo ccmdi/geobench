@@ -751,16 +751,14 @@ name = "geobench"
 version = "0.2.0"
 source = { editable = "." }
 dependencies = [
+    { name = "charoite" },
     { name = "httpx" },
+    { name = "python-dotenv" },
     { name = "shungite" },
     { name = "verifiers" },
 ]
 
 [package.optional-dependencies]
-build = [
-    { name = "charoite" },
-    { name = "python-dotenv" },
-]
 viz = [
     { name = "matplotlib" },
     { name = "pandas" },
@@ -770,7 +768,6 @@ viz = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "charoite" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "shungite", extra = ["testing"] },
@@ -778,21 +775,20 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "charoite", marker = "extra == 'build'", editable = "packages/charoite" },
+    { name = "charoite", editable = "packages/charoite" },
     { name = "httpx" },
     { name = "matplotlib", marker = "extra == 'viz'" },
     { name = "pandas", marker = "extra == 'viz'" },
-    { name = "python-dotenv", marker = "extra == 'build'" },
+    { name = "python-dotenv" },
     { name = "seaborn", marker = "extra == 'viz'" },
     { name = "shungite", editable = "packages/shungite" },
     { name = "streamlit", marker = "extra == 'viz'" },
     { name = "verifiers", specifier = "==0.4.2.dev11" },
 ]
-provides-extras = ["build", "viz"]
+provides-extras = ["viz"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "charoite", editable = "packages/charoite" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "shungite", extras = ["testing"], editable = "packages/shungite" },

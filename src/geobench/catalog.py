@@ -49,6 +49,15 @@ class Catalog:
             raise KeyError(f"{id}: {'no' if not found else 'more than one'} models.dev model, {sorted(found)}")
         return found.pop()
 
+    def hosting(self, id: str, provider: str) -> tuple[str, dict[str, Any]]:
+        canonical = self.canonical(id)
+        lab, _, local = canonical.partition("/")
+        served = self.providers.get(provider, {}).get("models", {})
+        hits = [(key, entry) for key, entry in served.items() if (provider == lab and key == local) or entry.get("canonical_model_id") == canonical]
+        if not hits:
+            raise KeyError(f"{provider} does not serve {canonical} on models.dev")
+        return hits[0]
+
     def __getitem__(self, id: str) -> Model:
         canonical = self.canonical(id)
         lab, _, local = canonical.partition("/")

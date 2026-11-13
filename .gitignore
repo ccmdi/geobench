@@ -26,7 +26,6 @@ responses/
 visualizations/*.csv
 visualizations/*/visualization.html
 
-outputs/
 .pytest_cache/
 
 # IDE

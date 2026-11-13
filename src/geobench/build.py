@@ -7,6 +7,7 @@ from pathlib import Path
 
 import httpx
 from charoite import StreetViewError
+from dotenv import load_dotenv
 
 from geobench.geoguessr import GeoGuessr, Location
 
@@ -59,6 +60,7 @@ def main() -> None:
     parser.add_argument("--output", required=True, help="Map folder name under dataset/")
     parser.add_argument("--map", required=True, help="GeoGuessr map id")
     args = parser.parse_args()
+    load_dotenv(".env")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     asyncio.run(build(Path("dataset") / args.output, args.num, args.map))
 
