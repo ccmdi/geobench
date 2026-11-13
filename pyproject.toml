@@ -40,6 +40,8 @@ build-backend = "hatchling.build"
 packages = ["src/geobench"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "packages/shungite/tests", "packages/charoite/tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+markers = ["live: touches real external services (deselected by default)"]
+addopts = "-m 'not live'"
