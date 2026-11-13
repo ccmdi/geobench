@@ -12,3 +12,6 @@ type = "subprocess"
 
 [sampling]
 reasoning_effort = "high"
+
+[client.timeout]
+read = 300
