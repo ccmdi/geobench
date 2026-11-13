@@ -1,5 +1,5 @@
 import argparse
-import os
+import subprocess
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -8,9 +8,11 @@ from dotenv import load_dotenv
 
 from geobench.catalog import Catalog
 from geobench.legacy import STARTED
+from geobench.slim import Dataset
 from geobench.taskset import GeoTasksetConfig
 
 CONFIGS = Path("configs")
+RESPONSES = Path("responses")
 FALLBACK = "openrouter"
 TEMPERATURE = 0.4
 
@@ -37,6 +39,7 @@ def main() -> None:
         print(f"{model.name} takes no temperature on {via}, so it runs at the provider default", file=sys.stderr)
 
     started = datetime.now(UTC).strftime(STARTED)
+    run_dir = f"{api_id.replace('/', '_')}_{args.map}_{started}"
     vf_run = str(Path(sys.executable).parent / "vf-run")
     command = [
         vf_run,
@@ -45,13 +48,15 @@ def main() -> None:
         "-m", api_id,
         "--env.taskset.map", args.map,
         "--select.shuffle", "True",
-        "-o", "responses",
-        "--run.dir", f"{api_id.replace('/', '_')}_{args.map}_{started}",
+        "-o", str(RESPONSES),
+        "--run.dir", run_dir,
         *sampling,
         *passthrough,
     ]
     print(f"{model.name} on {args.map} through {via} as {api_id}", file=sys.stderr)
-    os.execv(vf_run, command)
+    returncode = subprocess.run(command).returncode
+    Dataset(GeoTasksetConfig().dataset).slim_run(RESPONSES / run_dir)
+    sys.exit(returncode)
 
 
 if __name__ == "__main__":
