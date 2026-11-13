@@ -49,7 +49,7 @@ function renderFinder(state, cards, paint) {
   const maps = [...new Set(all.map((card) => card.map))].sort().map((map) => [map, map]);
   const labs = [...new Map(all.map((card) => [card.lab, card.lab_name]))].sort(([, a], [, b]) => a.localeCompare(b));
   $("facets").replaceChildren(
-    h("div", { class: "chips", role: "group", "aria-label": "Shelf" }, SHELVES.map(([key, label]) => h("button", { class: "chip", "aria-pressed": String(state.shelf === key), onclick: () => writeState({ shelf: key }) }, label))),
+    h("div", { class: "segments", role: "group", "aria-label": "Shelf" }, SHELVES.map(([key, label]) => h("button", { "aria-pressed": String(state.shelf === key), onclick: () => writeState({ shelf: key }) }, label))),
     select(state.map, [["", "Every map"], ...maps], (map) => writeState({ map })),
     select(state.lab, [["", "Every lab"], ...labs], (lab) => writeState({ lab })),
   );
