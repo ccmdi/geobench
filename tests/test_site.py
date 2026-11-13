@@ -51,6 +51,8 @@ def test_the_site_shows_public_runs_with_their_distances_and_countries(root: Pat
                 "thinking": False,
                 "effort": None,
                 "search": False,
+                "temperature": None,
+                "max_tokens": None,
                 "date": "2025-05-22",
                 "n": 4,
                 "country_success_rate": 0.25,

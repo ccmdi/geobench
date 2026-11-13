@@ -82,6 +82,8 @@ class Entry:
             "thinking": self.thinking,
             "effort": self.effort,
             "search": self.search,
+            "temperature": self.sampling.get("temperature"),
+            "max_tokens": self.sampling.get("max_tokens"),
             "date": next(iter(result.run_dates), None),
             "n": len(result.items),
             "country_success_rate": result.pass_rate,
