@@ -371,9 +371,9 @@ table { border-collapse: collapse; }
 
 .stats dd { margin: 2px 0 0; font-size: 17px; font-weight: 500; white-space: nowrap; }
 
-.photo { display: block; margin: 0 -24px; background: var(--paper); }
+.photo { display: block; margin: 0 -24px; aspect-ratio: 16 / 9; background: var(--paper); }
 
-.photo img { display: block; width: 100%; max-height: 42vh; object-fit: contain; }
+.photo img { display: block; width: 100%; height: 100%; object-fit: contain; }
 
 .run-card { padding: 14px 16px 16px; border-radius: 10px; background: var(--paper); }
 

@@ -2,6 +2,9 @@ import { AXES, METRICS, ORDERS, fmt, groups, imageUrl, mean, standings, writeSta
 import { fill, flag, h, reveal, select, swatch } from "./dom.js";
 import { MEASURES, SETTINGS } from "./views.js";
 
+const photo = h("img", { alt: "" });
+let showing = "";
+
 function stat(name, value, title) {
   return h("div", null, h("dt", null, name), h("dd", { class: "num", title }, value));
 }
@@ -16,6 +19,23 @@ export function step(ctx, by) {
   if (!order.length) return "";
   if (index < 0) return order[by > 0 ? 0 : order.length - 1].key;
   return order[(index + by + order.length) % order.length].key;
+}
+
+function picture(url) {
+  if (url !== showing) {
+    showing = url;
+    const next = new Image();
+    next.src = url;
+    next.decode().catch(() => null).then(() => showing === url && (photo.src = url));
+  }
+  return h("a", { class: "photo", href: url, target: "_blank" }, photo);
+}
+
+function preload(ctx) {
+  for (const by of [-1, 1]) {
+    const round = ctx.rounds.find((r) => r.key === step(ctx, by));
+    if (round) new Image().src = imageUrl(round.answers[0]);
+  }
 }
 
 function focus(run, label) {
@@ -105,8 +125,9 @@ export function roundPanel(ctx, panel) {
       stat("Worst", fmt.int(worst?.score), worst?.label),
       stat("Country", `${scoped.filter((a) => a.passed).length}/${scoped.length}`),
     ),
-    truth ? h("a", { class: "photo", href: imageUrl(truth), target: "_blank" }, h("img", { src: imageUrl(truth), alt: `Round ${truth.location}` })) : null,
+    truth ? picture(imageUrl(truth)) : null,
     h("ol", { class: "standings" }, active ? active.answers.toSorted((a, b) => (b.points ?? -1) - (a.points ?? -1)).map((a) => guessRow(ctx, a)) : table.toSorted((a, b) => (b.score ?? -1) - (a.score ?? -1)).map((s) => seriesRow(ctx, s))),
   );
   reveal(panel.querySelector(".round-cell[aria-current]"));
+  if (active) preload(ctx);
 }
