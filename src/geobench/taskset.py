@@ -33,18 +33,14 @@ class GeoTasksetConfig(vf.TasksetConfig):
     def map_dir(self) -> Path:
         return self.dataset / self.map
 
+    @property
+    def rounds(self) -> Iterator[tuple[Round, Path]]:
+        metadata = json.loads((self.map_dir / "metadata.json").read_text())
+        bounds = Bounds.model_validate(metadata["bounds"])
+        return ((Round.parse(raw, bounds), self.map_dir / raw["image_path"]) for raw in metadata["images"])
+
 
 class GeoTaskset(vf.Taskset[GeoTask, GeoTasksetConfig]):
     def load(self) -> Iterator[GeoTask]:
-        metadata = json.loads((self.config.map_dir / "metadata.json").read_text())
-        bounds = Bounds.model_validate(metadata["bounds"])
-        for raw in metadata["images"]:
-            round = Round.parse(raw, bounds)
-            yield GeoTask(
-                RoundData(
-                    id=f"{self.config.map}/{round.id}",
-                    prompt=[user_message(self.config.map_dir / raw["image_path"])],
-                    round=round,
-                ),
-                self.config.task,
-            )
+        for round, image in self.config.rounds:
+            yield GeoTask(RoundData(id=f"{self.config.map}/{round.id}", prompt=[user_message(image)], round=round), self.config.task)
