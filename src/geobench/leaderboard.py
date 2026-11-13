@@ -2,12 +2,15 @@ import argparse
 import json
 from collections.abc import Iterator
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from enum import StrEnum
+from functools import cached_property
 from pathlib import Path, PurePosixPath
 from typing import Any, Self
+from urllib.parse import urlparse
 
 from geobench.catalog import Catalog
-from shungite.report import Prices, Result, Run
+from shungite.report import Prices, Result, Run, Setup
 
 STARTED = "%Y-%m-%dT%H_%M_%S"
 
@@ -29,14 +32,18 @@ def run_dirs(root: Path) -> Iterator[Path]:
 
 @dataclass(frozen=True)
 class Entry:
+    root: Path
     path: PurePosixPath
     config: dict[str, Any]
-    run: Run
 
     @classmethod
     def read(cls, root: Path, dir: Path) -> Self:
         config = json.loads((dir / "configs" / "resolved" / "run.json").read_text("utf-8"))
-        return cls(PurePosixPath(dir.relative_to(root).as_posix()), config, Run.read(dir))
+        return cls(root, PurePosixPath(dir.relative_to(root).as_posix()), config)
+
+    @cached_property
+    def run(self) -> Run:
+        return Run.read(self.root / self.path)
 
     @property
     def status(self) -> Status:
@@ -62,15 +69,20 @@ class Entry:
     def search(self) -> bool:
         return any("google_search" in tool for tool in self.sampling.get("tools", []))
 
-    def as_json(self, catalog: Catalog) -> dict[str, Any]:
-        result = Result(self.run.setup, (self.run,))
-        measures = result.measures
-        model = catalog[result.setup.model]
-        tokens, cost = result.bill(Prices(model=model.price))["model"]
+    @property
+    def settings(self) -> dict[str, Any]:
+        return Setup.of(self.config).settings or {}
 
-        def measure(name: str, statistic: str) -> float | None:
-            return getattr(measures[name], statistic) if name in measures else None
+    @property
+    def started(self) -> str:
+        return datetime.strptime(self.path.name.rpartition(f"_{self.map}_")[2], STARTED).replace(tzinfo=UTC).isoformat()
 
+    @property
+    def provider(self) -> str | None:
+        return urlparse((self.config.get("client") or {}).get("base_url", "")).hostname
+
+    def card(self, catalog: Catalog) -> dict[str, Any]:
+        model = catalog[self.config["model"]]
         return {
             "run": str(self.path),
             "status": self.status,
@@ -86,6 +98,17 @@ class Entry:
             "search": self.search,
             "temperature": self.sampling.get("temperature"),
             "max_tokens": self.sampling.get("max_tokens"),
+        }
+
+    def as_json(self, catalog: Catalog) -> dict[str, Any]:
+        result = Result(self.run.setup, (self.run,))
+        measures = result.measures
+        tokens, cost = result.bill(Prices(model=catalog[result.setup.model].price))["model"]
+
+        def measure(name: str, statistic: str) -> float | None:
+            return getattr(measures[name], statistic) if name in measures else None
+
+        return self.card(catalog) | {
             "date": next(iter(result.run_dates), None),
             "n": len(result.items),
             "country_success_rate": result.pass_rate,
