@@ -77,7 +77,7 @@ def test_a_run_carries_the_leaderboards_summary_and_every_answer_with_its_reply(
     assert shown["summary"] == json.loads(json.dumps(Entry.read(responses, responses / PUBLIC).as_json(CATALOG)))
     assert shown["summary"]["n"] == 2
     usa, refused = shown["answers"]
-    assert (usa["place"], usa["guess_country"], usa["passed"], usa["reply"], usa["reasoning"]) == ("United States", "United States", True, "country: United States", "corn")
+    assert (usa["place"], usa["guess_place"], usa["passed"], usa["reply"], usa["reasoning"]) == ({"name": "United States", "code": "us"}, {"name": "United States", "code": "us"}, True, "country: United States", "corn")
     assert (refused["refused"], refused["points"], refused["reply"]) == (True, None, None)
 
 

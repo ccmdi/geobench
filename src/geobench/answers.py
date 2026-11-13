@@ -5,7 +5,7 @@ from typing import Self
 
 from geobench.leaderboard import Entry, Status, run_dirs
 from shungite import Guess, Item
-from shungite.country import place_name
+from shungite.country import Place
 from shungite.report import Trial
 
 @dataclass(frozen=True)
@@ -16,10 +16,11 @@ class Answer:
     task: str
     location: str
     country: str
-    place: str
+    place: Place
     lat: float
     lng: float
     guess_country: str | None
+    guess_place: Place | None
     guess_lat: float | None
     guess_lng: float | None
     refused: bool
@@ -41,10 +42,11 @@ class Answer:
             task=trial.task,
             location=round["id"],
             country=round["country"],
-            place=place_name(round["country"]),
+            place=Place.named(round["country"]),
             lat=round["location"]["lat"],
             lng=round["location"]["lng"],
             guess_country=None if guess is None else guess.country,
+            guess_place=None if guess is None else Place.named(guess.country),
             guess_lat=None if guess is None else guess.coordinates.lat,
             guess_lng=None if guess is None else guess.coordinates.lng,
             refused=extra["refused"],

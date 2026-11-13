@@ -37,7 +37,7 @@ def country(name: str | None, rows: list[Answer]) -> dict[str, Any]:
 
 
 def breakdown(rows: Iterable[Answer]) -> dict[str, Any]:
-    named = sorted(((row.place, row) for row in rows), key=itemgetter(0))
+    named = sorted(((row.place.name, row) for row in rows), key=itemgetter(0))
     return {
         "distances_km": sorted(row.distance_km for _, row in named if row.distance_km is not None),
         "countries": [country(name, [row for _, row in group]) for name, group in groupby(named, key=itemgetter(0))],

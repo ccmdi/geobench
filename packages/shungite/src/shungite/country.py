@@ -3,17 +3,22 @@ import re
 from collections.abc import Iterator
 from dataclasses import dataclass
 from importlib.resources import files
-from typing import Any
+from typing import Any, Self
 
 PARTS = re.compile(r"[,()]")
 TABLE: dict[str, dict[str, Any]] = json.loads(files(__package__).joinpath("countries.json").read_text("utf-8"))
 
 
-def spellings() -> Iterator[tuple[str, str, str]]:
+def places() -> Iterator[tuple[str, str, dict[str, Any]]]:
     for country, entry in TABLE.items():
-        yield from ((name, country, country) for name in (country, *entry["aliases"]))
-        for place, aliases in entry.get("territories", {}).items():
-            yield from ((name, country, place) for name in (place, *aliases))
+        yield country, country, entry
+        for place, territory in entry.get("territories", {}).items():
+            yield country, place, territory
+
+
+def spellings() -> Iterator[tuple[str, str, str]]:
+    for country, place, entry in places():
+        yield from ((name, country, place) for name in (place, *entry["aliases"]))
 
 
 @dataclass(frozen=True)
@@ -33,6 +38,18 @@ class Names:
 
 canonical_country = Names({name.casefold(): country for name, country, _ in spellings()})
 place_name = Names({name.casefold(): place for name, _, place in spellings()})
+CODES = {place: entry["code"] for _, place, entry in places()}
+
+
+@dataclass(frozen=True)
+class Place:
+    name: str
+    code: str | None
+
+    @classmethod
+    def named(cls, name: str | None) -> Self | None:
+        place = None if name is None else place_name(name)
+        return None if place is None else cls(place, CODES.get(place))
 
 
 def same_country(a: str, b: str) -> bool:

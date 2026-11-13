@@ -1,7 +1,7 @@
 import pytest
 
 from shungite import same_country
-from shungite.country import canonical_country, place_name
+from shungite.country import Place, canonical_country, place_name, places
 
 
 @pytest.mark.parametrize(
@@ -79,3 +79,23 @@ def test_a_name_it_does_not_know_keeps_its_casing() -> None:
 )
 def test_a_label_resolves_to_its_country_and_its_own_place(label: str, country: str, place: str) -> None:
     assert (canonical_country(label), place_name(label)) == (country, place)
+
+
+@pytest.mark.parametrize(
+    ("name", "place"),
+    [
+        ("United States of America (the)", Place("United States", "us")),
+        ("hong kong sar", Place("Hong Kong", "hk")),
+        ("Atlantis", Place("Atlantis", None)),
+        ("", None),
+        (None, None),
+    ],
+)
+def test_a_place_carries_its_iso_code(name: str | None, place: Place | None) -> None:
+    assert Place.named(name) == place
+
+
+def test_every_place_has_its_own_two_letter_code() -> None:
+    codes = [entry["code"] for _, _, entry in places()]
+    assert all(len(code) == 2 and code.isascii() and code.islower() for code in codes)
+    assert len(set(codes)) == len(codes)

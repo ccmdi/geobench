@@ -4,6 +4,7 @@ from pathlib import Path
 from conftest import GRADED, IMAGES, MAP, write_run
 
 from geobench.answers import Answer, answers
+from shungite.country import Place
 
 
 def test_answers_flatten_each_listed_runs_items_with_their_truth(tmp_path: Path) -> None:
@@ -18,10 +19,11 @@ def test_answers_flatten_each_listed_runs_items_with_their_truth(tmp_path: Path)
             task=f"{MAP}/1",
             location="1",
             country="United States of America (the)",
-            place="United States",
+            place=Place("United States", "us"),
             lat=IMAGES[0]["lat"],
             lng=IMAGES[0]["lng"],
             guess_country="United States",
+            guess_place=Place("United States", "us"),
             guess_lat=40.0,
             guess_lng=-90.0,
             refused=False,
@@ -35,10 +37,11 @@ def test_answers_flatten_each_listed_runs_items_with_their_truth(tmp_path: Path)
             task=f"{MAP}/4",
             location="4",
             country="Japan",
-            place="Japan",
+            place=Place("Japan", "jp"),
             lat=IMAGES[2]["lat"],
             lng=IMAGES[2]["lng"],
             guess_country=None,
+            guess_place=None,
             guess_lat=None,
             guess_lng=None,
             refused=True,
