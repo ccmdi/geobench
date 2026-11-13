@@ -11,4 +11,4 @@ id = "null"
 type = "subprocess"
 
 [sampling]
-max_tokens = 32000
+reasoning_effort = "high"
