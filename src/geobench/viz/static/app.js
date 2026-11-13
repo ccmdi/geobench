@@ -16,6 +16,7 @@ const SHELVES = [["", "All"], ["public", "Public"], ["hidden", "Hidden"], ["inco
 const $ = (id) => document.getElementById(id);
 let turn = 0;
 let latest;
+let legendOpen = false;
 
 function showPanel(shown) {
   document.body.classList.toggle("has-detail", shown);
@@ -92,7 +93,19 @@ function renderTabs(state) {
 }
 
 function renderLegend(ctx) {
-  return ctx.state.view === "runs" ? [] : ctx.series.slice(0, 24).map((s) => h("span", { class: "key" }, swatch(s.color), s.label));
+  if (ctx.state.view === "runs") return null;
+  const legend = h("div", { class: legendOpen ? "legend open" : "legend" },
+    h("div", { class: "keys", "data-scroll": "legend" }, ctx.series.map((s) => h("span", { class: "key", title: s.label }, swatch(s.color), s.label))),
+    h("button", { class: "link more", onclick: () => ((legendOpen = !legendOpen), render()) }),
+  );
+  requestAnimationFrame(() => {
+    const keys = legend.querySelector(".keys");
+    const hidden = [...keys.children].filter((key) => key.offsetTop > keys.firstElementChild?.offsetTop).length;
+    const more = legend.querySelector(".more");
+    more.hidden = !legendOpen && !hidden;
+    more.textContent = legendOpen ? "Less" : `+${hidden}`;
+  });
+  return legend;
 }
 
 async function render() {
@@ -129,7 +142,7 @@ async function render() {
   const ctx = { state, cards, selected, runs, answers, labels, series, rounds: rounds(answers, state.order, labels), color: paint, tint: (a) => paint(axis.key(a)), cardColor };
   latest = ctx;
   const current = VIEWS[state.view] ?? VIEWS.map;
-  $("controls").replaceChildren(h("div", { class: "control-row" }, current.controls(state)), h("div", { class: "legend" }, renderLegend(ctx)));
+  fill($("controls"), h("div", { class: "control-row" }, current.controls(state)), renderLegend(ctx));
   if (showPanel(state.view === "map" || ctx.rounds.some((round) => round.key === state.round))) roundPanel(ctx, $("detail"));
   current.render(ctx, view);
 }

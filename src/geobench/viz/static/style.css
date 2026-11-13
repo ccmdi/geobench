@@ -192,9 +192,15 @@ main { display: flex; flex-direction: column; height: 100vh; min-width: 0; }
 
 .control-row label { display: flex; align-items: center; gap: 8px; color: var(--ink-2); }
 
-.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; }
+.legend { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 12px; font-size: 14px; }
 
-.key { display: inline-flex; align-items: center; }
+.keys { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 2px 16px; height: 22px; overflow: hidden; }
+
+.legend.open .keys { height: auto; max-height: 132px; overflow: auto; }
+
+.key { display: inline-flex; align-items: center; max-width: 14em; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.more { flex: none; line-height: 20px; }
 
 #view { flex: 1; min-height: 0; position: relative; overflow: auto; }
 
