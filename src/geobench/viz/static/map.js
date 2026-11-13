@@ -1,58 +1,76 @@
-import * as L from "https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js";
-import { AXES, fmt, groups, writeState } from "./data.js";
-import { h } from "./dom.js";
+import { fmt, writeState } from "./data.js";
+import { flag, h } from "./dom.js";
 
-const element = document.createElement("div");
-element.id = "map";
-let map, layer, framed;
+const { MapboxOverlay, LineLayer, ScatterplotLayer } = globalThis.deck;
+const STYLES = { light: "https://tiles.openfreemap.org/styles/positron", dark: "https://tiles.openfreemap.org/styles/dark" };
+const dark = matchMedia("(prefers-color-scheme: dark)");
+const still = matchMedia("(prefers-reduced-motion: reduce)");
+
+const element = h("div", { id: "map" });
+const TIP = { backgroundColor: "var(--panel)", color: "var(--ink)", padding: "8px 10px", border: "1px solid var(--rule)", borderRadius: "6px", fontSize: "13px" };
+let map, overlay, framed;
+
+function rgb(css) {
+  const hex = css.replace("#", "");
+  return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
+}
 
 function nearest(lng, origin) {
   return lng + 360 * Math.round((origin - lng) / 360);
 }
 
-function open(task) {
-  writeState({ loc: task }, { push: true });
+function tip(content) {
+  return { html: h("div", null, content).innerHTML, className: "map-tip", style: TIP };
+}
+
+function create() {
+  map = new maplibregl.Map({ container: element, style: STYLES[dark.matches ? "dark" : "light"], center: [10, 20], zoom: 1.2, keyboard: false, attributionControl: { compact: true } });
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
+  overlay = new MapboxOverlay({ interleaved: false, getTooltip: ({ object }) => object?.tip() });
+  map.addControl(overlay);
+  dark.addEventListener("change", () => map.setStyle(STYLES[dark.matches ? "dark" : "light"]));
 }
 
 export function mapView(ctx, view) {
   view.replaceChildren(element);
-  if (!map) {
-    map = L.map(element, { preferCanvas: true, worldCopyJump: true, zoomSnap: 0.5 }).setView([20, 0], 2);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
-  }
-  map.invalidateSize();
-  layer?.remove();
-  layer = L.layerGroup().addTo(map);
+  if (!map) create();
+  map.resize();
   const css = getComputedStyle(document.documentElement);
-  const [ink, paper] = ["--ink", "--panel"].map((name) => css.getPropertyValue(name).trim());
-  const focus = ctx.state.loc;
-  const truths = [];
-  const focused = [];
-  const locations = groups(ctx.answers, AXES.location);
-  for (const location of locations) {
-    const { lat, lng, location: id, place } = location.answers[0];
-    const lit = !focus || location.key === focus;
-    for (const answer of location.answers.filter((a) => a.guess_lat != null)) {
-      const guess = [answer.guess_lat, nearest(answer.guess_lng, lng)];
-      const color = ctx.tint(answer);
-      const tip = () => h("div", null, h("strong", null, ctx.labels.get(answer.run)), h("br"), `${answer.guess_country ?? "No country"}, ${fmt.km(answer.distance_km)}, ${fmt.int(answer.points)} pts`);
-      L.polyline([[lat, lng], guess], { color, weight: location.key === focus ? 3 : 1.5, opacity: lit ? 0.8 : 0.08 })
-        .bindTooltip(tip, { sticky: true })
-        .on("click", () => open(location.key))
-        .addTo(layer);
-      L.circleMarker(guess, { radius: lit ? 3.5 : 2, stroke: false, fillColor: color, fillOpacity: lit ? 1 : 0.15 }).addTo(layer);
-      if (location.key === focus) focused.push(guess);
-    }
-    truths.push([lat, lng]);
-    if (location.key === focus) focused.push([lat, lng]);
-    L.circleMarker([lat, lng], { radius: location.key === focus ? 7 : 4.5, color: ink, weight: 2, opacity: lit ? 1 : 0.3, fillColor: paper, fillOpacity: lit ? 1 : 0.3 })
-      .bindTooltip(() => h("span", null, `#${id} ${place}`))
-      .on("click", () => open(location.key))
-      .addTo(layer);
-  }
-  const frame = focus || ctx.selected.map((card) => card.run).join("|");
-  if (frame !== framed && truths.length) {
+  const [ink, paper] = ["--ink", "--panel"].map((name) => rgb(css.getPropertyValue(name).trim()));
+  const round = ctx.state.round;
+  const shown = round ? ctx.answers.filter((a) => a.task === round) : ctx.answers;
+  const truths = [...Map.groupBy(shown, (a) => a.task).values()].map(([a]) => ({
+    task: a.task,
+    at: [a.lng, a.lat],
+    tip: () => tip([flag(a.place), h("strong", null, a.place.name), h("span", { class: "muted" }, ` #${a.location}`)]),
+  }));
+  const guesses = shown
+    .filter((a) => a.guess_lat != null)
+    .map((a) => ({
+      task: a.task,
+      from: [a.lng, a.lat],
+      at: [nearest(a.guess_lng, a.lng), a.guess_lat],
+      color: rgb(ctx.tint(a)),
+      tip: () => tip([
+        h("strong", null, ctx.labels.get(a.run)),
+        h("span", { class: "tip-line" }, flag(a.guess_place), a.guess_place?.name ?? "No country"),
+        h("span", { class: "tip-line num" }, `${fmt.int(a.points)} pts, ${fmt.km(a.distance_km)}`),
+      ]),
+    }));
+  const open = ({ object }) => object && writeState({ round: object.task }, { push: true });
+  overlay.setProps({
+    layers: [
+      new LineLayer({ id: "lines", data: guesses, pickable: true, getSourcePosition: (g) => g.from, getTargetPosition: (g) => g.at, getColor: (g) => [...g.color, 210], getWidth: round ? 3 : 1.5, widthUnits: "pixels", onClick: open }),
+      new ScatterplotLayer({ id: "guesses", data: guesses, pickable: true, getPosition: (g) => g.at, getFillColor: (g) => g.color, getLineColor: paper, stroked: true, lineWidthUnits: "pixels", getLineWidth: 1.5, radiusUnits: "pixels", getRadius: round ? 7 : 4.5, onClick: open }),
+      new ScatterplotLayer({ id: "truths", data: truths, pickable: true, getPosition: (t) => t.at, getFillColor: paper, getLineColor: ink, stroked: true, lineWidthUnits: "pixels", getLineWidth: 2.5, radiusUnits: "pixels", getRadius: round ? 9 : 5, onClick: open }),
+    ],
+  });
+  const frame = round || ctx.selected.map((card) => card.run).join("|");
+  const points = [...truths.map((t) => t.at), ...(round ? guesses.map((g) => g.at) : [])];
+  if (frame !== framed && points.length) {
     framed = frame;
-    map.fitBounds(focus && focused.length ? focused : truths, { padding: [48, 48], maxZoom: focus ? 7 : 4 });
+    const [lngs, lats] = [points.map((p) => p[0]), points.map((p) => p[1])];
+    const bounds = [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]];
+    map.fitBounds(bounds, { padding: 64, maxZoom: round ? 11 : 3.5, duration: still.matches ? 0 : 900 });
   }
 }

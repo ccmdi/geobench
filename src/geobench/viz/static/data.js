@@ -1,4 +1,4 @@
-const DEFAULTS = { view: "map", rows: "location", by: "run", metric: "points", sort: "-spread", q: "", shelf: "", map: "", lab: "", loc: "" };
+const DEFAULTS = { view: "map", rows: "location", by: "run", metric: "points", sort: "-spread", q: "", shelf: "", map: "", lab: "", round: "", order: "number", scope: "all" };
 
 export function readState() {
   const params = new URLSearchParams(location.hash.slice(1));
@@ -35,18 +35,26 @@ export function imageUrl(answer) {
   return `/api/image?${new URLSearchParams({ map: answer.map, location: answer.location })}`;
 }
 
+const DISTINCTIONS = [
+  (card) => [card.effort ?? (card.thinking ? "thinking" : null), card.search ? "search" : null],
+  (card) => [card.map],
+  (card) => [card.started.slice(0, 16).replace("T", " ")],
+];
+
 export function runLabels(selected) {
-  const base = (card) =>
-    [card.name, card.effort ? `(${card.effort})` : card.thinking ? "(thinking)" : null, card.search ? "+ search" : null, new Set(selected.map((c) => c.map)).size > 1 ? `on ${card.map}` : null]
-      .filter(Boolean)
-      .join(" ");
-  const counts = Map.groupBy(selected, base);
-  return new Map(selected.map((card) => [card.run, counts.get(base(card)).length > 1 ? `${base(card)} ${card.started.slice(0, 10)}` : base(card)]));
+  const parts = new Map(selected.map((card) => [card.run, []]));
+  const label = (card) => [card.name, ...parts.get(card.run)].join(" ");
+  for (const distinction of DISTINCTIONS) {
+    for (const rivals of Map.groupBy(selected, label).values()) {
+      if (rivals.length > 1) for (const card of rivals) parts.get(card.run).push(...distinction(card).filter(Boolean));
+    }
+  }
+  return new Map(selected.map((card) => [card.run, parts.get(card.run).length ? `${card.name} (${parts.get(card.run).join(", ")})` : card.name]));
 }
 
 export const AXES = {
-  location: { name: "Location", key: (a) => a.task, label: (a) => `#${a.location} ${a.place}` },
-  country: { name: "Country", key: (a) => a.place, label: (a) => a.place },
+  location: { name: "Round", key: (a) => a.task, label: (a) => `#${a.location}`, place: (a) => a.place },
+  country: { name: "Country", key: (a) => a.place.name, label: (a) => a.place.name, place: (a) => a.place },
   map: { name: "Map", key: (a) => a.map, label: (a) => a.map },
   run: { name: "Run", key: (a) => a.run, label: (a, labels) => labels.get(a.run) },
   model: { name: "Model", key: (a) => a.model, label: (a) => a.card.name },
@@ -62,7 +70,6 @@ export const fmt = {
   int: (v) => (v == null ? "-" : Math.round(v).toLocaleString("en-US")),
   km: (v) => (v == null ? "-" : `${v < 10 ? v.toFixed(1) : Math.round(v).toLocaleString("en-US")} km`),
   pct: (v) => (v == null ? "-" : `${(v * 100).toFixed(1)}%`),
-  coord: (lat, lng) => `${lat.toFixed(3)}, ${lng.toFixed(3)}`,
   usd: (v) => (v == null ? "-" : `$${v.toFixed(v < 1 ? 3 : 2)}`),
 };
 
@@ -106,11 +113,30 @@ export function pivot(answers, rows, series, metric, labels) {
 
 export function sorted(lines, sort) {
   const field = sort.replace(/^-/, "");
-  const value = { label: (l) => l.label, n: (l) => l.n, mean: (l) => l.mean, spread: (l) => l.spread }[field] ?? ((l) => l.cells[Number(field.slice(1))]);
+  const value = { key: (l) => l.key, label: (l) => l.label, n: (l) => l.n, mean: (l) => l.mean, spread: (l) => l.spread }[field] ?? ((l) => l.cells[Number(field.slice(1))]);
   const sign = sort.startsWith("-") ? -1 : 1;
   return lines.toSorted((a, b) => {
     const [x, y] = [value(a), value(b)];
     if (x == null || y == null) return (x == null) - (y == null);
     return sign * (typeof x === "string" ? x.localeCompare(y, undefined, { numeric: true }) : x - y);
   });
+}
+
+export const ORDERS = {
+  number: { name: "Round number", sort: "key" },
+  hardest: { name: "Hardest first", sort: "mean" },
+  disputed: { name: "Most disputed", sort: "-spread" },
+};
+
+export function rounds(answers, order, labels) {
+  return sorted(pivot(answers, AXES.location, AXES.run, METRICS.points, labels).lines, ORDERS[order].sort);
+}
+
+export function standings(series) {
+  return series.map((s) => ({
+    ...s,
+    score: mean(s.answers.map(METRICS.points.value)),
+    km: mean(s.answers.map(METRICS.km.value)),
+    hits: s.answers.filter((a) => a.passed).length,
+  }));
 }

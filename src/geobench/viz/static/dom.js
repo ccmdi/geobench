@@ -21,6 +21,13 @@ export function select(value, options, onchange) {
   return h("select", { onchange: (event) => onchange(event.target.value) }, options.map(([key, label]) => h("option", { value: key, selected: key === value }, label)));
 }
 
+const FLAGS = "https://cdn.jsdelivr.net/npm/flag-icons@7.6.0/flags/4x3";
+
+export function flag(place, title = place?.name) {
+  if (!place) return h("span", { class: "flag none", title: "No country" }, "-");
+  return place.code ? h("img", { class: "flag", src: `${FLAGS}/${place.code}.svg`, alt: place.name, title }) : h("span", { class: "flag named", title }, place.name);
+}
+
 export function swatch(color) {
   return h("span", { class: "swatch", style: `--c: ${color}` });
 }

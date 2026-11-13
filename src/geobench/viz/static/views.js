@@ -1,12 +1,12 @@
 import { AXES, METRICS, ROWS, SERIES, fmt, mean, pivot, sorted, writeState } from "./data.js";
-import { fill, h, select, swatch } from "./dom.js";
+import { fill, flag, h, select, swatch } from "./dom.js";
 
 function tinted(metric, value) {
   return value == null ? null : `--g: ${Math.max(0, Math.min(1, metric.goodness(value))).toFixed(3)}`;
 }
 
 function guessed(answers) {
-  return answers.map((a) => (a.refused ? "Refused" : `${a.guess_country ?? "No country"}, ${fmt.km(a.distance_km)}`)).join("\n");
+  return answers.map((a) => (a.refused ? "Refused" : `${a.guess_place?.name ?? "No country"}, ${fmt.km(a.distance_km)}`)).join("\n");
 }
 
 export function tableControls(state) {
@@ -14,6 +14,7 @@ export function tableControls(state) {
     h("label", null, "Rows", select(state.rows, ROWS.map((key) => [key, AXES[key].name]), (rows) => writeState({ rows }))),
     h("label", null, "Columns", select(state.by, SERIES.map((key) => [key, AXES[key].name]), (by) => writeState({ by }))),
     h("label", null, "Measure", select(state.metric, Object.entries(METRICS).map(([key, m]) => [key, m.name]), (metric) => writeState({ metric }))),
+    state.round ? h("label", null, "Rounds", select(state.scope, [["all", "All rounds"], ["round", "Active round"]], (scope) => writeState({ scope }))) : null,
   ];
 }
 
@@ -21,7 +22,8 @@ export function tableView(ctx, view) {
   const { state } = ctx;
   const rows = AXES[state.rows];
   const metric = METRICS[state.metric];
-  const { columns, lines } = pivot(ctx.answers, rows, AXES[state.by], metric, ctx.labels);
+  const scoped = state.scope === "round" && state.round ? ctx.answers.filter((a) => a.task === state.round) : ctx.answers;
+  const { columns, lines } = pivot(scoped, rows, AXES[state.by], metric, ctx.labels);
   const header = (field, label, title) => {
     const active = state.sort.replace(/^-/, "") === field;
     const next = active && state.sort.startsWith("-") ? field : `-${field}`;
@@ -33,15 +35,15 @@ export function tableView(ctx, view) {
       h("table", { class: "pivot" },
         h("thead", null, h("tr", null,
           header("label", rows.name),
-          header("n", "n", "Locations"),
+          header("n", "n", "Rounds"),
           header("mean", "Mean"),
           header("spread", "Spread", "Highest minus lowest column"),
           columns.map((column, i) => header(`c${i}`, h("span", { class: "column" }, swatch(ctx.color(column.key)), column.label), column.label)),
         )),
         h("tbody", null, sorted(lines, state.sort).map((line) => {
           const bySeries = Map.groupBy(line.answers, AXES[state.by].key);
-          return h("tr", { class: opens ? (line.key === state.loc ? "opens current" : "opens") : null, onclick: opens ? () => writeState({ loc: line.key }, { push: true }) : null },
-            h("th", { scope: "row" }, line.label, opens && new Set(ctx.answers.map((a) => a.map)).size > 1 ? h("span", { class: "muted" }, ` ${line.answers[0].map}`) : null),
+          return h("tr", { class: opens ? (line.key === state.round ? "opens current" : "opens") : null, onclick: opens ? () => writeState({ round: line.key }, { push: true }) : null },
+            h("th", { scope: "row" }, rows.place ? flag(rows.place(line.answers[0])) : null, line.label, opens && new Set(ctx.answers.map((a) => a.map)).size > 1 ? h("span", { class: "muted" }, ` ${line.answers[0].map}`) : null),
             h("td", { class: "num muted" }, line.n),
             h("td", { class: "num cell", style: tinted(metric, line.mean) }, metric.format(line.mean)),
             h("td", { class: "num muted" }, line.spread == null ? "-" : metric.format(line.spread)),
