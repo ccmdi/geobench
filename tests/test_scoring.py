@@ -6,7 +6,6 @@ from haversine import Direction, inverse_haversine
 from geobench.taskset import GeoTask
 from shungite import Coordinates
 
-
 def offset(point: Coordinates, km: float) -> Coordinates:
     lat, lng = inverse_haversine((point.lat, point.lng), km, Direction.NORTH)
     return Coordinates(lat=lat, lng=lng)
@@ -105,3 +104,43 @@ async def test_rescore_reproduces_the_score(tasks: dict[str, GeoTask]) -> None:
     assert trace.model_dump(include={"rewards", "metrics", "info"}) == first
     assert 0.0 < trace.reward < 1.0
     assert trace.metrics["country_correct"] == 0.0
+
+
+def answered(country: str, lat: float, lng: float) -> dict[str, object]:
+    return {"country": country, "coordinates": {"lat": lat, "lng": lng}}
+
+
+@pytest.mark.parametrize(
+    ("reply", "guess", "points"),
+    [
+        pytest.param(
+            "<thinking>\ncountry: South Korea\nlat: 37.5\nlng: 127.0\n</thinking>\n\ncountry: Japan\nlat: 35.0\nlng: 139.0",
+            answered("Japan", 35.0, 139.0),
+            4567.0,
+            id="draft-in-thinking",
+        ),
+        pytest.param(
+            "country: Japan or Korea\nlat: 36°N\nlng: somewhere east\n\ncountry: Japan\nlat: 35.5\nlng: 138.5",
+            answered("Japan", 35.5, 138.5),
+            4769.0,
+            id="malformed-block-before-answer",
+        ),
+        pytest.param(
+            "*   **Country**: Japan\n*   **Latitude**: 36.5° N\n*   **Longitude**: 139.5° E",
+            answered("Japan", 36.5, 139.5),
+            4669.0,
+            id="bulleted-hemispheres",
+        ),
+        pytest.param(
+            "country: Japan\nlat: 36.2\nlng: 138.3 (approximate for the Nagano region)",
+            answered("Japan", 36.2, 138.3),
+            4952.0,
+            id="trailing-note",
+        ),
+        pytest.param("Approximate latitude: 36.0\nApproximate longitude: 138.0", None, 0.0, id="prose-labels"),
+        pytest.param("I'm sorry, but I can't determine where this photo was taken.", None, 0.0, id="refusal"),
+    ],
+)
+async def test_only_the_final_answer_block_scores(tasks: dict[str, GeoTask], reply: str, guess: dict[str, object] | None, points: float) -> None:
+    trace = await scored(tasks[f"{MAP}/3"], reply)
+    assert (trace.info["items"]["3"]["guess"], trace.metrics["score"]) == (guess, points)

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from conftest import MAP
+from conftest import IMAGES, MAP
 from test_legacy import ANSWERED, REFUSED, SUMMARY, write_old_run
 
 from geobench.answers import Answer, answers
@@ -21,8 +21,8 @@ def test_answers_flatten_each_listed_runs_items_with_their_truth(tmp_path: Path)
             task=f"{MAP}/1",
             location="1",
             country="United States of America (the)",
-            lat=39.4817,
-            lng=-98.2263,
+            lat=IMAGES[0]["lat"],
+            lng=IMAGES[0]["lng"],
             guess_country="United States",
             guess_lat=40.0,
             guess_lng=-90.0,
@@ -37,8 +37,8 @@ def test_answers_flatten_each_listed_runs_items_with_their_truth(tmp_path: Path)
             task=f"{MAP}/4",
             location="4",
             country="Japan",
-            lat=35.6812362,
-            lng=139.7671248,
+            lat=IMAGES[2]["lat"],
+            lng=IMAGES[2]["lng"],
             guess_country=None,
             guess_lat=None,
             guess_lng=None,

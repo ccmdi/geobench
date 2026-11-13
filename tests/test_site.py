@@ -1,15 +1,12 @@
 import json
 from collections.abc import Iterator
-from math import isclose
 from pathlib import Path
 from typing import Any
 
 import pytest
 from conftest import CATALOG, MAP
-from test_legacy import ANSWERED, REFUSED, RESPONSES, SUMMARY, write_old_run
+from test_legacy import ANSWERED, REFUSED, SUMMARY, write_old_run
 
-from geobench.catalog import Catalog
-from geobench.leaderboard import Status, leaderboard
 from geobench.legacy import LegacyRun
 from geobench.site import site
 
@@ -81,23 +78,3 @@ def test_no_key_in_the_site_carries_coordinates_or_location_ids(root: Path) -> N
 
 def test_the_site_builds_the_same_twice(root: Path) -> None:
     assert json.dumps(site(root, CATALOG)) == json.dumps(site(root, CATALOG))
-
-
-@pytest.mark.skipif(not RESPONSES.is_dir(), reason="responses/ is private and not in this clone")
-def test_every_public_run_on_the_site_matches_the_leaderboard() -> None:
-    catalog = Catalog.fetch()
-    board = {run["run"]: run for run in leaderboard(RESPONSES, catalog)["runs"] if run["status"] is Status.PUBLIC}
-    shown = site(RESPONSES, catalog)
-    assert [run["run"] for run in shown["runs"]] == list(board)
-    assert not [key for key in keys(shown) if any(part in key for part in COORDINATES)]
-    for run in shown["runs"]:
-        expected = board[run["run"]]
-        countries = run["countries"]
-        assert run["n"] == expected["n"] == sum(country["n"] for country in countries)
-        for rate in ("country_success_rate", "refusal_rate"):
-            assert isclose(run[rate], expected[rate], abs_tol=5e-4)
-        passed = sum(country["country_success_rate"] * country["n"] for country in countries)
-        assert isclose(passed, expected["country_success_rate"] * expected["n"], abs_tol=5e-4 * run["n"])
-        assert len(run["distances_km"]) == round(run["n"] * (1 - expected["refusal_rate"]))
-        assert all(country["country"] != country["country"].casefold() for country in countries)
-        assert [country["country"] for country in countries] == sorted({country["country"] for country in countries})

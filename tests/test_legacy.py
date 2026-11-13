@@ -6,22 +6,22 @@ from typing import Any
 
 import pytest
 import verifiers.v1 as vf
-from conftest import CATALOG, IMAGES, MAP, ROOT, write_map
+from conftest import CATALOG, IMAGES, MAP, write_map
 from verifiers.v1.utils.trace_store import read_episodes
 
 from geobench.leaderboard import Entry, Status, leaderboard
 from geobench.legacy import LegacyRun
 
-RESPONSES = ROOT / "responses"
 SUMMARY_TO_ENTRY = {"test": "map", "total_samples": "n", "model_id": "model"}
 NOT_SHOWN = {"model", "sampling"}
 COLUMNS = ["location_id", "country_true", "lat_true", "lng_true", "refused", "error_message", "country_guess", "lat_guess", "lng_guess", "distance_km", "score", "country_correct"]
+TRUTHS = [[image["country"], image["lat"], image["lng"]] for image in IMAGES]
 ANSWERED = [
-    ["1", "United States of America (the)", 39.4817, -98.2263, False, "", "United States", 40.0, -90.0, 308.6, 4233.0, True],
-    ["2", "Kenya", 0.6142, 37.3519, False, "", "Tanzania", -3.0, 36.0, 285.1, 4300.0, False],
-    ["3", "Japan", 35.6812362, 139.7671248, False, "", "Japan", 35.0, 139.0, 102.4, 4700.0, False],
+    ["1", *TRUTHS[0], False, "", "United States", 40.0, -90.0, 308.6, 4233.0, True],
+    ["2", *TRUTHS[1], False, "", "Tanzania", -3.0, 36.0, 285.1, 4300.0, False],
+    ["3", *TRUTHS[2], False, "", "Japan", 35.0, 139.0, 102.4, 4700.0, False],
 ]
-REFUSED = ["4", "Japan", 35.6812362, 139.7671248, True, "Format error: no answer", "", "", "", "", "", ""]
+REFUSED = ["4", *TRUTHS[2], True, "Format error: no answer", "", "", "", "", "", ""]
 SUMMARY = {
     "model": "Lab Model 1",
     "test": MAP,

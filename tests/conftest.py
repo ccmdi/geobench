@@ -25,7 +25,7 @@ BOUNDS = {"min": {"lat": -55.0, "lng": -170.0}, "max": {"lat": 80.0, "lng": 178.
 IMAGES: list[dict[str, Any]] = [
     {"image_path": "images/1.jpg", "country": "United States of America (the)", "lat": 39.4817, "lng": -98.2263},
     {"image_path": "images/2.jpg", "country": "Kenya", "lat": 0.6142, "lng": 37.3519},
-    {"image_path": "images/3.jpg", "country": "Japan", "lat": 35.6812362, "lng": 139.7671248},
+    {"image_path": "images/3.jpg", "country": "Japan", "lat": 36.1374, "lng": 138.4409},
 ]
 
 
