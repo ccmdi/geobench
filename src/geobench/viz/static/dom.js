@@ -1,8 +1,21 @@
 const SVG = "http://www.w3.org/2000/svg";
 
+function present(children) {
+  return children.flat(Infinity).filter((child) => child != null && child !== false);
+}
+
 export function fill(element, ...children) {
-  element.replaceChildren(...children.flat(Infinity).filter((child) => child != null && child !== false));
+  const scrolled = new Map([...element.querySelectorAll("[data-scroll]")].map((kept) => [kept.dataset.scroll, kept.scrollTop]));
+  element.replaceChildren(...present(children));
+  for (const kept of element.querySelectorAll("[data-scroll]")) kept.scrollTop = scrolled.get(kept.dataset.scroll) ?? 0;
   return element;
+}
+
+export function reveal(item) {
+  const box = item?.offsetParent;
+  if (!box) return;
+  const [top, bottom] = [item.offsetTop, item.offsetTop + item.offsetHeight];
+  if (top < box.scrollTop || bottom > box.scrollTop + box.clientHeight) box.scrollTop = top - (box.clientHeight - item.offsetHeight) / 2;
 }
 
 export function h(tag, props, ...children) {
@@ -14,7 +27,8 @@ export function h(tag, props, ...children) {
     else if (key in element && !space && typeof value !== "string") element[key] = value;
     else element.setAttribute(key, value === true ? "" : value);
   }
-  return fill(element, ...children);
+  element.append(...present(children));
+  return element;
 }
 
 export function select(value, options, onchange) {

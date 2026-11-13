@@ -1,5 +1,5 @@
 import { AXES, METRICS, ORDERS, fmt, groups, imageUrl, mean, standings, writeState } from "./data.js";
-import { fill, flag, h, select, swatch } from "./dom.js";
+import { fill, flag, h, reveal, select, swatch } from "./dom.js";
 
 function stat(name, value, title) {
   return h("div", null, h("dt", null, name), h("dd", { class: "num", title }, value));
@@ -67,7 +67,7 @@ export function roundPanel(ctx, panel) {
       ),
     ),
     h("div", { class: "round-order" }, select(state.order, Object.entries(ORDERS).map(([key, order]) => [key, order.name]), (order) => writeState({ order }))),
-    h("ol", { class: "strip" }, ctx.rounds.map((round) => {
+    h("ol", { class: "strip", "data-scroll": "strip" }, ctx.rounds.map((round) => {
       const first = round.answers[0];
       return h("li", null,
         h("button", {
@@ -88,4 +88,5 @@ export function roundPanel(ctx, panel) {
     truth ? h("a", { class: "photo", href: imageUrl(truth), target: "_blank" }, h("img", { src: imageUrl(truth), alt: `Round ${truth.location}` })) : null,
     h("ol", { class: "standings" }, active ? active.answers.toSorted((a, b) => (b.points ?? -1) - (a.points ?? -1)).map((a) => guessRow(ctx, a)) : table.toSorted((a, b) => (b.score ?? -1) - (a.score ?? -1)).map(seriesRow)),
   );
+  reveal(panel.querySelector(".round-cell[aria-current]"));
 }

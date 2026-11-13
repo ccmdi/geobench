@@ -345,7 +345,7 @@ table { border-collapse: collapse; }
 
 .round-order select { width: 100%; }
 
-.strip { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; max-height: 164px; overflow: auto; }
+.strip { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; max-height: 164px; overflow: auto; position: relative; }
 
 .round-cell {
   min-width: 30px;
